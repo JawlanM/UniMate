@@ -1,0 +1,6 @@
+@UniMate.Api_HostAddress = http://localhost:5034
+
+GET {{UniMate.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
