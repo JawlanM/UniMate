@@ -14,3 +14,12 @@ obj/
 
 # macOS
 .DS_Store
+
+# local secrets
+.env
+
+
+# SQLite files (tests)
+*.db
+*.db-shm
+*.db-wal

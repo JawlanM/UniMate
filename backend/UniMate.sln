@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniMate.Api", "UniMate.Api\UniMate.Api.csproj", "{012618FD-FFF7-4E18-81A5-5B3571EEAF59}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniMate.Domain", "UniMate.Domain\UniMate.Domain.csproj", "{2C2F82AA-F8AD-4805-B329-741BC58C7DB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniMate.Application", "UniMate.Application\UniMate.Application.csproj", "{9A89AA6A-EABF-42E6-ABB4-6999F45018DF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniMate.Infrastructure", "UniMate.Infrastructure\UniMate.Infrastructure.csproj", "{52FF5714-528E-41FA-ACC8-D7FDA53315E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniMate.Tests", "UniMate.Tests\UniMate.Tests.csproj", "{F7B967D6-F66D-491D-BB51-07EA8DC309EE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{012618FD-FFF7-4E18-81A5-5B3571EEAF59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{012618FD-FFF7-4E18-81A5-5B3571EEAF59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{012618FD-FFF7-4E18-81A5-5B3571EEAF59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{012618FD-FFF7-4E18-81A5-5B3571EEAF59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C2F82AA-F8AD-4805-B329-741BC58C7DB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C2F82AA-F8AD-4805-B329-741BC58C7DB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C2F82AA-F8AD-4805-B329-741BC58C7DB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C2F82AA-F8AD-4805-B329-741BC58C7DB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A89AA6A-EABF-42E6-ABB4-6999F45018DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A89AA6A-EABF-42E6-ABB4-6999F45018DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A89AA6A-EABF-42E6-ABB4-6999F45018DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A89AA6A-EABF-42E6-ABB4-6999F45018DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52FF5714-528E-41FA-ACC8-D7FDA53315E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52FF5714-528E-41FA-ACC8-D7FDA53315E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52FF5714-528E-41FA-ACC8-D7FDA53315E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52FF5714-528E-41FA-ACC8-D7FDA53315E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7B967D6-F66D-491D-BB51-07EA8DC309EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7B967D6-F66D-491D-BB51-07EA8DC309EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7B967D6-F66D-491D-BB51-07EA8DC309EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7B967D6-F66D-491D-BB51-07EA8DC309EE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
