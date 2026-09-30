@@ -23,3 +23,7 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
