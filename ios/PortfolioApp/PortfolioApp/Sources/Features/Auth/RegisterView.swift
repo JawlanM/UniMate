@@ -26,7 +26,7 @@ struct RegisterView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Space.md) {
                 StepIndicator(current: step, total: 2)
 
                 if step == 1 {
@@ -37,7 +37,7 @@ struct RegisterView: View {
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
-            .padding(Theme.screenPadding)
+            .padding(Space.screen)
             .animation(.easeInOut(duration: 0.25), value: step)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -60,7 +60,7 @@ struct RegisterView: View {
     // MARK: Step 1
 
     private var roleStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.md) {
             header(title: "What brings you here?", subtitle: "You can change this later in your profile.")
 
             RoleOptionCard(
@@ -79,23 +79,23 @@ struct RegisterView: View {
 
             Button("Continue") { step = 2 }
                 .buttonStyle(PrimaryButtonStyle())
-                .padding(.top, 8)
+                .padding(.top, Space.xs)
         }
     }
 
     // MARK: Step 2
 
     private var detailsStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.md) {
             header(title: "Create your account", subtitle: "Use your university email so others know you're a student.")
 
             // Side by side on wide screens, stacked when text is large.
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.sm) {
                     LabeledInput(label: "First name", text: $firstName, kind: .name)
                     LabeledInput(label: "Last name", text: $lastName, kind: .name)
                 }
-                VStack(spacing: 16) {
+                VStack(spacing: Space.md) {
                     LabeledInput(label: "First name", text: $firstName, kind: .name)
                     LabeledInput(label: "Last name", text: $lastName, kind: .name)
                 }
@@ -106,7 +106,7 @@ struct RegisterView: View {
 
             Text("At least 8 characters, with a letter and a number.")
                 .font(.footnote)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
 
             if let message = errorMessage ?? (showProblems ? formProblem : nil) {
                 ErrorBanner(message: message)
@@ -116,33 +116,33 @@ struct RegisterView: View {
                 Task { await submit() }
             } label: {
                 if isLoading {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(UniColor.onInk)
                 } else {
                     Text("Create account")
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(isLoading)
-            .padding(.top, 8)
+            .padding(.top, Space.xs)
 
             Text("By creating an account you agree to keep UniMate a safe, respectful student community.")
                 .font(.footnote)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
     }
 
     private func header(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text(title)
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(Theme.ink)
+                .font(UniFont.largeTitle)
+                .foregroundStyle(UniColor.ink)
                 .accessibilityAddTraits(.isHeader)
             Text(subtitle)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, Space.xs)
     }
 
     private func submit() async {
@@ -174,10 +174,10 @@ private struct StepIndicator: View {
     let total: Int
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.xs) {
             ForEach(1...total, id: \.self) { index in
                 Capsule()
-                    .fill(index <= current ? Theme.orange : Theme.line)
+                    .fill(index <= current ? UniColor.apricot : UniColor.hairline)
                     .frame(height: 6)
             }
         }
@@ -195,16 +195,17 @@ private struct RoleOptionCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(spacing: Space.md) {
                 Image(systemName: systemImage)
                     .font(.title2)
-                    .foregroundStyle(isSelected ? .white : Theme.orangeDark)
-                    .frame(width: 56, height: 56)
-                    .background(isSelected ? Theme.orange : Theme.peach, in: Circle())
+                    .foregroundStyle(isSelected ? UniColor.ink : UniColor.ember)
+                    .frame(width: 52, height: 52)
+                    .background(isSelected ? UniColor.apricot : UniColor.apricotWash, in: Circle())
+                    .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.headline).foregroundStyle(Theme.ink)
-                    Text(message).font(.subheadline).foregroundStyle(Theme.muted)
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text(title).font(.headline).foregroundStyle(UniColor.ink)
+                    Text(message).font(.subheadline).foregroundStyle(UniColor.inkSecondary)
                 }
                 .multilineTextAlignment(.leading)
 
@@ -212,12 +213,14 @@ private struct RoleOptionCard: View {
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(isSelected ? Theme.orange : Theme.line)
+                    .foregroundStyle(isSelected ? UniColor.ink : UniColor.inkTertiary)
             }
-            .card()
+            .padding(Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? UniColor.raised : UniColor.sunken, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-                    .stroke(isSelected ? Theme.orange : .clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
+                    .stroke(isSelected ? UniColor.apricot : .clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)

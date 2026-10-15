@@ -18,14 +18,14 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Space.md) {
                 switch stage {
                 case .request: requestStage
                 case .reset: resetStage
                 case .done: doneStage
                 }
             }
-            .padding(Theme.screenPadding)
+            .padding(Space.screen)
             .animation(.easeInOut(duration: 0.25), value: stage)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -36,7 +36,7 @@ struct ForgotPasswordView: View {
     // MARK: Stages
 
     private var requestStage: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.md) {
             header(title: "Reset password", subtitle: "Enter your student email and we'll send you a 6-digit code.")
 
             LabeledInput(label: "Student email", text: $email, kind: .email)
@@ -51,7 +51,7 @@ struct ForgotPasswordView: View {
     }
 
     private var resetStage: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.md) {
             header(title: "Check your email", subtitle: "If an account exists for \(email.trimmed), a code is on its way. It expires in 15 minutes.")
 
             LabeledInput(label: "6-digit code", text: $code, kind: .code)
@@ -62,7 +62,7 @@ struct ForgotPasswordView: View {
 
             Text(Validation.passwordProblem(newPassword) ?? "Looks good.")
                 .font(.footnote)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
 
             if let errorMessage { ErrorBanner(message: errorMessage) }
 
@@ -80,27 +80,27 @@ struct ForgotPasswordView: View {
                 stage = .request
             }
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.orangeDark)
+            .foregroundStyle(UniColor.ember)
             .frame(maxWidth: .infinity, minHeight: 44)
         }
     }
 
     private var doneStage: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Space.lg) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 72))
-                .foregroundStyle(Theme.orange)
-                .padding(.top, 40)
+                .foregroundStyle(UniColor.success)
+                .padding(.top, Space.xxl)
                 .accessibilityHidden(true)
             Text("Password updated")
-                .font(.system(.title, design: .rounded, weight: .bold))
+                .font(UniFont.title)
                 .accessibilityAddTraits(.isHeader)
             Text("You can now sign in with your new password.")
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
                 .multilineTextAlignment(.center)
             Button("Back to sign in") { dismiss() }
                 .buttonStyle(PrimaryButtonStyle())
-                .padding(.top, 12)
+                .padding(.top, Space.sm)
         }
         .frame(maxWidth: .infinity)
     }
@@ -108,15 +108,15 @@ struct ForgotPasswordView: View {
     // MARK: Helpers
 
     private func header(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text(title)
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(Theme.ink)
+                .font(UniFont.largeTitle)
+                .foregroundStyle(UniColor.ink)
                 .accessibilityAddTraits(.isHeader)
             Text(subtitle)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
         }
-        .padding(.bottom, 12)
+        .padding(.bottom, Space.sm)
     }
 
     private func actionButton(title: String, isEnabled: Bool, action: @escaping () async throws -> Void) -> some View {
@@ -133,7 +133,7 @@ struct ForgotPasswordView: View {
             }
         } label: {
             if isLoading {
-                ProgressView().tint(.white)
+                ProgressView().tint(UniColor.onInk)
             } else {
                 Text(title)
             }

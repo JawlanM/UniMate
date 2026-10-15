@@ -9,7 +9,7 @@ struct UniMateApp: App {
         WindowGroup {
             RootView()
                 .environment(session)
-                .tint(Theme.orange)
+                .tint(UniColor.ember)
         }
     }
 }

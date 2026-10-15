@@ -8,39 +8,40 @@ struct ProfileView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: Space.lg) {
                 Text("Profile")
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    .foregroundStyle(Theme.ink)
+                    .font(UniFont.largeTitle)
+                    .foregroundStyle(UniColor.ink)
                     .accessibilityAddTraits(.isHeader)
 
                 identityCard
 
                 VStack(spacing: 0) {
                     MenuRow(title: "Edit profile", systemImage: "person")
-                    Divider().overlay(Theme.line)
-                    MenuRow(title: "Skills & categories", systemImage: "bolt")
-                    Divider().overlay(Theme.line)
+                    Divider().overlay(UniColor.hairline)
+                    MenuRow(title: "Skills and categories", systemImage: "bolt")
+                    Divider().overlay(UniColor.hairline)
                     MenuRow(title: "Availability", systemImage: "calendar")
-                    Divider().overlay(Theme.line)
+                    Divider().overlay(UniColor.hairline)
                     MenuRow(title: "Notifications", systemImage: "bell")
-                    Divider().overlay(Theme.line)
+                    Divider().overlay(UniColor.hairline)
 
                     Button(role: .destructive) {
                         isConfirmingSignOut = true
                     } label: {
                         Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                             .font(.body.weight(.medium))
-                            .foregroundStyle(Theme.roseText)
+                            .foregroundStyle(UniColor.danger)
                             .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                 }
-                .card(padding: 16)
+                .padding(.horizontal, Space.md)
+                .raisedSurface(padding: 0)
             }
-            .padding(.horizontal, Theme.screenPadding)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Space.screen)
+            .padding(.top, Space.xs)
+            .padding(.bottom, Space.xl)
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
@@ -50,32 +51,32 @@ struct ProfileView: View {
     }
 
     private var identityCard: some View {
-        VStack(spacing: 12) {
-            AvatarView(name: user?.fullName ?? "UniMate", size: 96)
+        VStack(spacing: Space.sm) {
+            AvatarView(name: user?.fullName ?? "UniMate", size: 88)
 
             HStack(spacing: 6) {
                 Text(user?.fullName ?? "")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(Theme.ink)
+                    .font(UniFont.title)
+                    .foregroundStyle(UniColor.ink)
                 if user?.isVerified == true {
                     Image(systemName: "checkmark.shield.fill")
-                        .foregroundStyle(Theme.mintText)
+                        .foregroundStyle(UniColor.success)
                         .accessibilityLabel(Text("Verified student"))
                 }
             }
 
             Text(user?.email ?? "")
                 .font(.subheadline)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(UniColor.inkSecondary)
 
             Chip(
                 text: user?.role == .freelancer ? "Finding work" : "Finding help",
                 systemImage: user?.role == .freelancer ? "briefcase" : "person.2",
-                style: .orange
+                style: .brand
             )
         }
         .frame(maxWidth: .infinity)
-        .card(padding: 24)
+        .padding(.vertical, Space.md)
     }
 }
 
@@ -89,16 +90,18 @@ private struct MenuRow: View {
         } label: {
             HStack(spacing: 16) {
                 Image(systemName: systemImage)
-                    .font(.title3)
-                    .foregroundStyle(Theme.orangeDark)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(UniColor.ember)
                     .frame(width: 28)
+                    .accessibilityHidden(true)
                 Text(title)
                     .font(.body.weight(.medium))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(UniColor.ink)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(UniColor.inkTertiary)
+                    .accessibilityHidden(true)
             }
             .frame(minHeight: 56)
             .contentShape(Rectangle())

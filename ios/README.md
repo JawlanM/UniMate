@@ -3,17 +3,22 @@
 SwiftUI app. Currently has the sign-in flow, home screen and tab shell, using mock data.
 iOS 17+, Xcode 15+.
 
-## First-time setup (on a Mac)
+## Running (on a Mac)
 
-1. Xcode → File → New → Project → iOS **App**.
-   - Product Name: `UniMate`
-   - Interface: SwiftUI, Language: Swift, Storage: None
-   - Save it inside this `ios/` folder.
-2. In the new project, delete `ContentView.swift` and `UniMateApp.swift` (Move to Trash).
-3. Drag the `ios/Sources` folder into the project navigator, under the UniMate group.
-   Tick "Copy items if needed" **off**, choose "Create groups", and tick the UniMate target.
-4. Target → General → Minimum Deployments → iOS **17.0**.
-5. Run on an iPhone simulator (⌘R).
+The Xcode project is `ios/PortfolioApp/PortfolioApp.xcodeproj`. All Swift code lives in
+`ios/PortfolioApp/PortfolioApp/Sources/`. The project uses folder-synced groups, so new files
+added there show up in Xcode automatically.
+
+1. Open `PortfolioApp.xcodeproj` and run on an iPhone simulator (⌘R).
+2. Fonts (one-time): go to Target → Info → add the key **Fonts provided by application**
+   (`UIAppFonts`) with three items:
+   `BricolageGrotesque-SemiBold.ttf`, `BricolageGrotesque-Bold.ttf`, `BricolageGrotesque-ExtraBold.ttf`.
+   The files are in `PortfolioApp/Resources/Fonts`. If this step is skipped the app still runs,
+   but headings fall back to SF Pro.
+3. `ContentView.swift` is leftover Xcode template code and isn't used (the entry point is
+   `Sources/App/UniMateApp.swift`). It can be deleted.
+
+Design tokens and rules are in `DESIGN_SYSTEM.md`.
 
 ## Trying the mock login
 
@@ -29,10 +34,11 @@ iOS 17+, Xcode 15+.
 ```
 Sources/
   App/            entry point, RootView (auth ↔ tabs), MainTabView + custom tab bar
-  DesignSystem/   Theme colours, buttons, inputs, chips, cards, FlowLayout
+  DesignSystem/   tokens (colour, type, spacing, radius) and shared components
   Models/         AppUser, UserRole (matches backend JSON), mock home data
   Services/       AuthServicing protocol + MockAuthService, AppSession, Validation
-  Features/       Auth (Welcome, SignIn, Register, ForgotPassword), Home, Profile
+  Features/       Auth (Welcome, SignIn, Register, ForgotPassword), Home, Matches (Recommendations, FreelancerProfile), Profile
+../Resources/Fonts/   Bricolage Grotesque font files (OFL licence)
 ```
 
 To connect the real backend later, write an `APIAuthService: AuthServicing` that calls

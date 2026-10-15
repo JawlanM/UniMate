@@ -4,7 +4,7 @@ enum MainTab: Hashable {
     case home, offers, profile
 }
 
-/// Home · Offers · (+) · Profile, with the floating dark tab bar from the C1 design.
+/// Home, Offers, (+), Profile, with the floating dark tab bar from the C1 design.
 struct MainTabView: View {
     @Environment(AppSession.self) private var session
     @State private var selection: MainTab = .home
@@ -55,10 +55,9 @@ struct UniTabBar: View {
                 Button(action: onPost) {
                     Image(systemName: "plus")
                         .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Theme.orange, in: Circle())
-                        .shadow(color: Theme.orange.opacity(0.5), radius: 12, y: 4)
+                        .foregroundStyle(UniColor.ink)
+                        .frame(width: 56, height: 56)
+                        .background(UniColor.apricot, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
@@ -69,9 +68,9 @@ struct UniTabBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(Theme.ink, in: Capsule())
-        .shadow(color: .black.opacity(0.15), radius: 16, y: 6)
-        .padding(.horizontal, Theme.screenPadding)
+        .background(UniColor.ink, in: Capsule())
+        .lift()
+        .padding(.horizontal, Space.screen)
         .padding(.bottom, 4)
     }
 
@@ -86,7 +85,7 @@ struct UniTabBar: View {
                 Text(title)
                     .font(.caption.weight(.semibold))
             }
-            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.55))
+            .foregroundStyle(isSelected ? UniColor.onInk : UniColor.onInk.opacity(0.62))
             .frame(maxWidth: .infinity, minHeight: 52)
             .contentShape(Rectangle())
         }

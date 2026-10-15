@@ -14,16 +14,16 @@ struct SignInView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.md) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text("Welcome back")
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .foregroundStyle(Theme.ink)
+                        .font(UniFont.largeTitle)
+                        .foregroundStyle(UniColor.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text("Sign in with your student email.")
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(UniColor.inkSecondary)
                 }
-                .padding(.bottom, 12)
+                .padding(.bottom, Space.sm)
 
                 LabeledInput(label: "Student email", text: $email, kind: .email)
                 LabeledInput(label: "Password", text: $password, kind: .password)
@@ -33,7 +33,7 @@ struct SignInView: View {
                     NavigationLink(value: AuthRoute.forgotPassword) {
                         Text("Forgot password?")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.orangeDark)
+                            .foregroundStyle(UniColor.ember)
                             .frame(minHeight: 44)
                     }
                 }
@@ -46,7 +46,7 @@ struct SignInView: View {
                     Task { await submit() }
                 } label: {
                     if isLoading {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(UniColor.onInk)
                     } else {
                         Text("Sign in")
                     }
@@ -59,22 +59,22 @@ struct SignInView: View {
                     title: "Only .edu.au emails",
                     message: "Every account belongs to a real student."
                 )
-                .padding(.top, 8)
+                .padding(.top, Space.xs)
 
-                HStack(spacing: 4) {
+                HStack(spacing: Space.xxs) {
                     Text("New to UniMate?")
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(UniColor.inkSecondary)
                     NavigationLink(value: AuthRoute.register) {
                         Text("Create account")
                             .fontWeight(.semibold)
-                            .foregroundStyle(Theme.ink)
+                            .foregroundStyle(UniColor.ink)
                     }
                 }
                 .font(.subheadline)
                 .frame(maxWidth: .infinity, minHeight: 44)
-                .padding(.top, 16)
+                .padding(.top, Space.md)
             }
-            .padding(Theme.screenPadding)
+            .padding(Space.screen)
         }
         .scrollDismissesKeyboard(.interactively)
         .screenBackground()
