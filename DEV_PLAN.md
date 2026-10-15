@@ -38,6 +38,9 @@ Rules, enforced in the API and covered by tests:
 - Apply only to an **Open** job, once per freelancer, and never to your own job.
 - Accept only on an **Open** job, and only by the job's client.
 - Complete only an **Assigned** job, and only by the job's client.
+- Cancel only an **Open** job, and only by the job's client (its pending applications become Rejected).
+- Withdraw only a **Pending** application, and only by the freelancer who sent it. Withdrawing is final: the unique (JobId, FreelancerId) index means you can't reapply.
+- Reports: Open → UnderReview → Resolved or Dismissed (admin only).
 
 ---
 
@@ -64,18 +67,22 @@ Rules, enforced in the API and covered by tests:
 - [ ] Verify on the iPad in Mac session 1: Light/Dark on each screen, the largest accessibility text size, the Large Content Viewer on the tab bar, and rotation.
 - Rule for later phases: new screens use only `UniColor`, `UniFont` and `readableWidth()`, so P7 stays consistent.
 
-## Phase 2: Simplify the backend (Windows, 1 h)
-- [ ] Delete `UniMate.Application` and `UniMate.Infrastructure`. Move the Npgsql, EF Design and Identity.Core packages into Api, and remove JwtBearer.
-- [ ] Trim the entities:
-  - `User`: Id, Email, PasswordHash, FirstName, LastName, Role, CreatedAt.
-  - `Category`: Id, Name, Icon.
-  - `Job`: Id, ClientId, CategoryId, Title, Description, Budget, Suburb, ScheduledAt, Status, AssignedFreelancerId, timestamps.
-  - `JobApplication`: Id, JobId, FreelancerId, Message, Status, CreatedAt.
-  - `Report`: Id, ReporterId, JobId, Reason, Details, Status, CreatedAt.
-- [ ] Delete the unused entities: Language, Skill, FreelancerSkill, FreelancerLanguage, Offer, Review, RefreshToken, PasswordResetCode, ClientProfile, FreelancerProfile.
-- [ ] `JobStatus`: Open, Assigned, Completed. `ApplicationStatus`: Pending, Accepted, Rejected. `ReportStatus`: Open, Reviewed, Resolved.
-- [ ] `AppDbContext`, with the connection string in **user-secrets**. Seed categories and one admin user with `HasData`.
-- [ ] Create the `InitialCreate` migration and apply it to the Docker Postgres.
+## Phase 2: Simplify the backend (Windows): DONE 2026-10-15
+- [x] Deleted `UniMate.Application` and `UniMate.Infrastructure`. The solution is now Api + Domain + Tests. Npgsql and Identity.Core moved into Api, and JwtBearer was removed.
+- [x] Trimmed the entities to `User`, `Category` (int Id, Name, IconName), `Job`, `JobApplication` and `Report` (on a job). Deleted the profile, skill, language, offer, review and token entities, plus `OfferStatus` and `WeekDays`.
+- [x] **Kept the full status enums (user decision):**
+  - `JobStatus`: Open/Assigned/Completed/Cancelled
+  - `ApplicationStatus`: Pending/Accepted/Rejected/Withdrawn
+  - `ReportStatus`: Open/UnderReview/Resolved/Dismissed
+
+  All are stored as strings.
+- [x] `Api/Data/AppDbContext.cs`:
+  - a unique index on email, and a unique index on (JobId, FreelancerId),
+  - Restrict deletes on every link to User,
+  - 6 categories seeded with `HasData`.
+- [x] The connection string is in user-secrets (`ConnectionStrings:Default`). The `InitialCreate` migration is applied to the Docker Postgres. `/api/health` returns `database: true`.
+- Admin user: moved to Phase 3. It's created at startup together with auth, because `HasData` can't hash a password deterministically.
+- Known warning: the EF Core 8.0.11/8.0.31 version conflict in Tests. Fix it by adding an explicit `Microsoft.EntityFrameworkCore` 8.0.31 reference to Api, before writing tests.
 
 ## Phase 3: API endpoints (Windows, 2.5 h)
 Minimal APIs, grouped by feature (`AuthEndpoints.cs`, `JobEndpoints.cs`, `ReportEndpoints.cs`), using DTO records and async EF.
@@ -93,12 +100,15 @@ Minimal APIs, grouped by feature (`AuthEndpoints.cs`, `JobEndpoints.cs`, `Report
 | GET | `/api/applications?freelancerId=` | My Work | 200 |
 | POST | `/api/applications/{id}/accept` | Accept: the job becomes Assigned | 204 / 400 / 403 / 404 |
 | POST | `/api/jobs/{id}/complete` | Assigned → Completed | 204 / 400 / 403 / 404 |
+| POST | `/api/jobs/{id}/cancel` | Open → Cancelled (client only) | 204 / 400 / 403 / 404 |
+| POST | `/api/applications/{id}/withdraw` | Pending → Withdrawn (freelancer only) | 204 / 400 / 403 / 404 |
 | POST | `/api/reports` | Report a job | 201 / 400 |
 | GET | `/api/reports` | Admin: list reports | 200 |
-| PATCH | `/api/reports/{id}` | Admin: change a report's status | 204 / 400 / 404 |
+| PATCH | `/api/reports/{id}` | Admin: set the status (UnderReview / Resolved / Dismissed) | 204 / 400 / 404 |
 
-- [ ] Put the status rules in small methods on `Job` (`CanAccept`, `CanComplete`), so they can be tested without HTTP.
-- [ ] Turn on Swagger, remove `UseHttpsRedirection`, listen on `http://0.0.0.0:5080`, and add a Windows firewall rule for port 5080.
+- [ ] Put the status rules in small methods on `Job` and `JobApplication` (`CanAccept`, `CanComplete`, `CanCancel`, `CanWithdraw`), so they can be tested without HTTP.
+- [ ] Create the admin user at startup if none exists, with the password from user-secrets (`SeedAdmin:Password`).
+- [ ] Listen on `http://0.0.0.0:5080`, and add a Windows firewall rule for port 5080.
 - [ ] Update `UniMate.Api.http` with an example request for every endpoint.
 - [ ] xUnit tests for the status rules and for duplicate applications.
 - [ ] Check every endpoint in Swagger. Commit: *"Add minimal API with EF Core and PostgreSQL"*.
