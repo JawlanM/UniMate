@@ -55,23 +55,29 @@ struct UniTabBar: View {
                 Button(action: onPost) {
                     Image(systemName: "plus")
                         .font(.title2.weight(.bold))
-                        .foregroundStyle(UniColor.ink)
+                        .foregroundStyle(UniColor.onApricot)
                         .frame(width: 56, height: 56)
                         .background(UniColor.apricot, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel(Text("Post a job"))
+                .accessibilityShowsLargeContentViewer {
+                    Label("Post a job", systemImage: "plus")
+                }
             }
 
             tabButton(.profile, title: "Profile", icon: "person")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(UniColor.ink, in: Capsule())
+        .background(UniColor.bar, in: Capsule())
         .lift()
         .padding(.horizontal, Space.screen)
         .padding(.bottom, 4)
+        // Like the system tab bar: labels stop growing at a size that still fits,
+        // and a long press shows the Large Content Viewer instead.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private func tabButton(_ tab: MainTab, title: String, icon: String) -> some View {
@@ -85,12 +91,15 @@ struct UniTabBar: View {
                 Text(title)
                     .font(.caption.weight(.semibold))
             }
-            .foregroundStyle(isSelected ? UniColor.onInk : UniColor.onInk.opacity(0.62))
+            .foregroundStyle(isSelected ? UniColor.onBar : UniColor.onBar.opacity(0.62))
             .frame(maxWidth: .infinity, minHeight: 52)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityShowsLargeContentViewer {
+            Label(title, systemImage: icon)
+        }
     }
 }
 
