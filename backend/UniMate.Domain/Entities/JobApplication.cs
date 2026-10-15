@@ -17,4 +17,15 @@ public class JobApplication
     public string Message { get; set; } = string.Empty;
     public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
     public DateTimeOffset CreatedAt { get; set; }
+
+
+    // Only a pending application can be withdrawn. Withdrawing is final.
+    public bool CanWithdraw() => Status == ApplicationStatus.Pending;
+
+    public void Withdraw()
+    {
+        if (!CanWithdraw()) throw new InvalidOperationException("Only a pending application can be withdrawn.");
+
+        Status = ApplicationStatus.Withdrawn;
+    }
 }
