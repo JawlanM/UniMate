@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // UniMate design tokens. Every colour, font, spacing value and radius used by a
 // screen should come from here. The reasoning behind each token is in
@@ -14,34 +15,58 @@ extension Color {
             opacity: opacity
         )
     }
+
+    /// A colour with a Light Mode and a Dark Mode value. iOS picks the right one
+    /// and updates it automatically when the user changes appearance.
+    nonisolated static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(UIColor { traits in
+            UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
+}
+
+extension UIColor {
+    nonisolated convenience init(hex: UInt32) {
+        self.init(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
 }
 
 // MARK: - Colour
 
 enum UniColor {
     // Surfaces, from back to front
-    static let canvas = Color(hex: 0xFBF5EC)      // page background (warm cream)
-    static let sunken = Color(hex: 0xF3EADD)      // grouped lists, tracks, quiet tiles
-    static let raised = Color(hex: 0xFFFDF9)      // cards that sit above the page
-    static let hairline = Color(hex: 0xE6D9CA)    // dividers and outlines
+    static let canvas = Color.adaptive(light: 0xFBF5EC, dark: 0x17130F)   // page background
+    static let sunken = Color.adaptive(light: 0xF3EADD, dark: 0x221C17)   // grouped lists, tracks, quiet tiles
+    static let raised = Color.adaptive(light: 0xFFFDF9, dark: 0x2A231D)   // cards that sit above the page
+    static let hairline = Color.adaptive(light: 0xE6D9CA, dark: 0x3D342C) // dividers and outlines
 
-    // Text and icons
-    static let ink = Color(hex: 0x211B16)          // titles, body, primary buttons (15.7:1 on canvas)
-    static let inkSecondary = Color(hex: 0x6A5F55) // supporting text (5.7:1)
-    static let inkTertiary = Color(hex: 0x877B70)  // placeholders, chevrons, disabled (icons only)
-    static let onInk = Color.white
+    // Text and icons. In Dark Mode ink becomes a warm off-white.
+    static let ink = Color.adaptive(light: 0x211B16, dark: 0xF6EEE4)
+    static let inkSecondary = Color.adaptive(light: 0x6A5F55, dark: 0xC2B5A8)
+    static let inkTertiary = Color.adaptive(light: 0x877B70, dark: 0x8F8377)  // icons only
+    static let onInk = Color.adaptive(light: 0xFFFFFF, dark: 0x17130F)        // text on an ink fill (primary button)
 
-    // Brand. Apricot is a fill colour only: put ink on it, never white text.
+    // Floating tab bar: stays dark in both modes, lifted slightly in Dark Mode.
+    static let bar = Color.adaptive(light: 0x211B16, dark: 0x2E2620)
+    static let onBar = Color.white
+
+    // Brand. Apricot is light in both modes, so content on it is always dark.
     static let apricot = Color(hex: 0xFFA266)
-    static let apricotWash = Color(hex: 0xFFEBDC)  // tinted chips, selected rows
-    static let apricotTrack = Color(hex: 0xF6D9C2) // empty part of score rings and bars
-    static let ember = Color(hex: 0xA9531C)        // orange text and icons (4.9:1 on canvas)
+    static let onApricot = Color(hex: 0x211B16)
+    static let apricotWash = Color.adaptive(light: 0xFFEBDC, dark: 0x3B2819)  // tinted chips, selected rows
+    static let apricotTrack = Color.adaptive(light: 0xF6D9C2, dark: 0x4A3423) // empty part of bars
+    static let ember = Color.adaptive(light: 0xA9531C, dark: 0xF29A5E)        // orange text and icons
 
     // Semantic, only for success and destructive states
-    static let success = Color(hex: 0x2E7A4E)
-    static let successWash = Color(hex: 0xE4F1E8)
-    static let danger = Color(hex: 0xB23A2A)
-    static let dangerWash = Color(hex: 0xFBE6E1)
+    static let success = Color.adaptive(light: 0x2E7A4E, dark: 0x6CC892)
+    static let successWash = Color.adaptive(light: 0xE4F1E8, dark: 0x16301F)
+    static let danger = Color.adaptive(light: 0xB23A2A, dark: 0xF0806E)
+    static let dangerWash = Color.adaptive(light: 0xFBE6E1, dark: 0x3A1C17)
 }
 
 // Stable avatar colour per name, so "Liam Chen" always gets the same one.
@@ -113,8 +138,15 @@ enum Radius {
 /// Only things that float above the page get a shadow (tab bar, top match,
 /// sheets). Everything else is separated by colour or a hairline.
 struct LiftShadow: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
     func body(content: Content) -> some View {
-        content.shadow(color: Color(hex: 0x46280F, opacity: 0.10), radius: 18, y: 8)
+        // A brown shadow disappears on a dark page, so Dark Mode uses a stronger black one.
+        content.shadow(
+            color: colorScheme == .dark ? Color.black.opacity(0.45) : Color(hex: 0x46280F, opacity: 0.10),
+            radius: 18,
+            y: 8
+        )
     }
 }
 
@@ -127,6 +159,13 @@ extension View {
     }
 
     func lift() -> some View { modifier(LiftShadow()) }
+
+    /// Keeps content at a comfortable reading width in landscape and on iPad,
+    /// centred on the screen instead of stretched edge to edge.
+    func readableWidth(_ maxWidth: CGFloat = 640) -> some View {
+        frame(maxWidth: maxWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
+    }
 
     /// A card that sits above the page: raised colour, hairline, no shadow.
     func raisedSurface(padding: CGFloat = Space.md, radius: CGFloat = Radius.card) -> some View {

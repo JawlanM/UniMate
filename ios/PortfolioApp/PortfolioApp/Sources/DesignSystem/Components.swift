@@ -20,7 +20,7 @@ struct AvatarView: View {
             .overlay(
                 Text(initials)
                     .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
-                    .foregroundStyle(UniColor.onInk)
+                    .foregroundStyle(.white)
             )
             .overlay {
                 if outlined {
@@ -464,7 +464,7 @@ struct PrimaryButtonStyle: ButtonStyle {
 /// Apricot: reserved for the matching action ("Find my matches").
 struct BrandButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        StyledButton(configuration: configuration, fill: UniColor.apricot, text: UniColor.ink, outline: nil)
+        StyledButton(configuration: configuration, fill: UniColor.apricot, text: UniColor.onApricot, outline: nil)
     }
 }
 
