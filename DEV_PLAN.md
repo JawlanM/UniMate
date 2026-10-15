@@ -50,11 +50,19 @@ Rules, enforced in the API and covered by tests:
   - `NSLocalNetworkUsageDescription`.
 - [x] Deleted the template `ContentView.swift`.
 
-## Phase 1: P7 foundation (Windows, 1 h)
-- [ ] `Theme.swift`: make every `UniColor` adaptive with `UIColor { traits in … }`. Pick dark values for canvas, sunken, raised, hairline, the ink colours, the washes and the accents, and lower the shadow opacity in dark mode.
-- [ ] Replace the 4 `.system(size:)` fonts with text styles. Use `@ScaledMetric` for icon frames next to text.
-- [ ] Review existing screens for fixed heights. Make sure tall screens scroll, and use `ViewThatFits` for rows that need to stack at large text sizes.
-- [ ] All new screens in later phases use `UniColor` and `UniFont` only, so P7 stays consistent.
+## Phase 1: P7 foundation (Windows): DONE 2026-10-15 (code only, not compiled yet)
+- [x] `Theme.swift`: every `UniColor` is adaptive through `Color.adaptive(light:dark:)` (`UIColor { traits in … }`). New tokens:
+  - `onApricot`: always dark, because apricot is light in both modes,
+  - `bar` and `onBar`: the tab bar stays dark,
+  - `onInk`: flips with the mode.
+
+  `LiftShadow` uses a stronger black shadow in Dark Mode.
+- [x] Avatar initials are fixed white, since avatar colours are dark in both modes. The brand button, the tab bar plus button and the selected role icon use `onApricot`.
+- [x] Tab bar: `.dynamicTypeSize(...xxxLarge)` and `.accessibilityShowsLargeContentViewer`, matching the system tab bar.
+- [x] Orientation: every remaining screen already scrolls. `readableWidth()` (max 640, centred) is applied to Welcome, Sign in, Register and Profile.
+- [x] The fixed `.system(size:)` fonts that remain are only in screens deleted in Phase 4/7 (score ring, stars, forgot password). The avatar initials keep a fixed size on purpose: they fit the circle and are hidden from VoiceOver.
+- [ ] Verify on the iPad in Mac session 1: Light/Dark on each screen, the largest accessibility text size, the Large Content Viewer on the tab bar, and rotation.
+- Rule for later phases: new screens use only `UniColor`, `UniFont` and `readableWidth()`, so P7 stays consistent.
 
 ## Phase 2: Simplify the backend (Windows, 1 h)
 - [ ] Delete `UniMate.Application` and `UniMate.Infrastructure`. Move the Npgsql, EF Design and Identity.Core packages into Api, and remove JwtBearer.
