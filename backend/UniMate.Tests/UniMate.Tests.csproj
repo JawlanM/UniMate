@@ -22,7 +22,7 @@
 
    <ItemGroup>
     <ProjectReference Include="..\UniMate.Domain\UniMate.Domain.csproj" />
-    <ProjectReference Include="..\UniMate.Api\UniMate.Api.csproj" />
+
   </ItemGroup>
 
 </Project>
