@@ -42,6 +42,7 @@ struct ProfileView: View {
             .padding(.horizontal, Space.screen)
             .padding(.top, Space.xs)
             .padding(.bottom, Space.xl)
+            .readableWidth()
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)

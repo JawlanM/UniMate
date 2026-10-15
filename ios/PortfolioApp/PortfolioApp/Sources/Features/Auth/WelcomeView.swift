@@ -46,6 +46,7 @@ struct WelcomeView: View {
             }
             .padding(.horizontal, Space.screen)
             .padding(.vertical, Space.md)
+            .readableWidth()
         }
         .scrollBounceBehavior(.basedOnSize)
         .screenBackground()

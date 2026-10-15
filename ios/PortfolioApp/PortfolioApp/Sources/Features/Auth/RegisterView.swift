@@ -38,6 +38,7 @@ struct RegisterView: View {
                 }
             }
             .padding(Space.screen)
+            .readableWidth()
             .animation(.easeInOut(duration: 0.25), value: step)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -198,7 +199,7 @@ private struct RoleOptionCard: View {
             HStack(spacing: Space.md) {
                 Image(systemName: systemImage)
                     .font(.title2)
-                    .foregroundStyle(isSelected ? UniColor.ink : UniColor.ember)
+                    .foregroundStyle(isSelected ? UniColor.onApricot : UniColor.ember)
                     .frame(width: 52, height: 52)
                     .background(isSelected ? UniColor.apricot : UniColor.apricotWash, in: Circle())
                     .accessibilityHidden(true)

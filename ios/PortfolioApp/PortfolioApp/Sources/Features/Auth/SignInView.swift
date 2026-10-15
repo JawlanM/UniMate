@@ -75,6 +75,7 @@ struct SignInView: View {
                 .padding(.top, Space.md)
             }
             .padding(Space.screen)
+            .readableWidth()
         }
         .scrollDismissesKeyboard(.interactively)
         .screenBackground()
