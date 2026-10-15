@@ -15,7 +15,7 @@ Last updated: 2026-10-15. Replaces the 2026-10-09 plan.
 - **Testing device: the user's iPad.** It's installed from the Mac with a free Apple ID.
   - Free provisioning expires after **7 days**, so reinstall within 7 days of each demo (Week 12 lab and Week 14/15).
   - Check the iPad's iOS version. The project currently targets **iOS 26.5**. Phase 0 lowers it to **17.0**, the lowest version that has SwiftData, `@Observable` and `ContentUnavailableView`.
-- **The iPad must reach the API**, so the API runs on the Windows laptop on the same Wi-Fi, at `http://<windows-ip>:5080`. Campus Wi-Fi (eduroam) usually blocks device-to-device traffic, so see Phase 8 for the demo plan.
+- **The API is hosted on Render, and the database on Neon** (Phase 3b). The iPad reaches it over HTTPS from any network, so the demo doesn't depend on the laptop, the lab Wi-Fi or a firewall. Locally the API still runs on `localhost` with the Docker Postgres for development.
 
 ## Decisions (2026-10-15)
 
@@ -82,10 +82,10 @@ Rules, enforced in the API and covered by tests:
   - 6 categories seeded with `HasData`.
 - [x] The connection string is in user-secrets (`ConnectionStrings:Default`). The `InitialCreate` migration is applied to the Docker Postgres. `/api/health` returns `database: true`.
 - Admin user: moved to Phase 3. It's created at startup together with auth, because `HasData` can't hash a password deterministically.
-- Known warning: the EF Core 8.0.11/8.0.31 version conflict in Tests. Fix it by adding an explicit `Microsoft.EntityFrameworkCore` 8.0.31 reference to Api, before writing tests.
+- Known warning: the EF Core 8.0.11/8.0.31 version conflict in Tests. Fixed in Phase 3 by removing Tests' reference to Api, since the tests only need Domain.
 
-## Phase 3: API endpoints (Windows, 2.5 h)
-Minimal APIs, grouped by feature (`AuthEndpoints.cs`, `JobEndpoints.cs`, `ReportEndpoints.cs`), using DTO records and async EF.
+## Phase 3: API endpoints (Windows): DONE 2026-10-16
+Minimal APIs, grouped by feature (`AuthEndpoints.cs`, `JobEndpoints.cs`, `ApplicationEndpoints.cs`, `ReportEndpoints.cs`), using DTO records (`Dtos/`) and async EF. Every error is `{ "message": "..." }`. Enums are sent as text.
 
 | Method | Route | Purpose | Responses |
 |---|---|---|---|
@@ -94,30 +94,46 @@ Minimal APIs, grouped by feature (`AuthEndpoints.cs`, `JobEndpoints.cs`, `Report
 | GET | `/api/categories` | Categories for the picker | 200 |
 | GET | `/api/jobs?status=&categoryId=&clientId=` | Browse jobs / my jobs | 200 |
 | GET | `/api/jobs/{id}` | Job detail | 200 / 404 |
-| POST | `/api/jobs` | Post a job (validated) | 201 / 400 |
+| POST | `/api/jobs` | Post a job (validated, clients only) | 201 / 400 / 403 |
 | GET | `/api/jobs/{id}/applications` | Applicants for a job | 200 / 404 |
-| POST | `/api/jobs/{id}/applications` | Apply | 201 / 400 / 404 / 409 |
+| POST | `/api/jobs/{id}/applications` | Apply (freelancers only) | 201 / 400 / 403 / 404 / 409 |
 | GET | `/api/applications?freelancerId=` | My Work | 200 |
 | POST | `/api/applications/{id}/accept` | Accept: the job becomes Assigned | 204 / 400 / 403 / 404 |
 | POST | `/api/jobs/{id}/complete` | Assigned → Completed | 204 / 400 / 403 / 404 |
 | POST | `/api/jobs/{id}/cancel` | Open → Cancelled (client only) | 204 / 400 / 403 / 404 |
 | POST | `/api/applications/{id}/withdraw` | Pending → Withdrawn (freelancer only) | 204 / 400 / 403 / 404 |
-| POST | `/api/reports` | Report a job | 201 / 400 |
-| GET | `/api/reports` | Admin: list reports | 200 |
-| PATCH | `/api/reports/{id}` | Admin: set the status (UnderReview / Resolved / Dismissed) | 204 / 400 / 404 |
+| POST | `/api/reports` | Report a job | 201 / 400 / 404 |
+| GET | `/api/reports?userId=` | Admin: list reports | 200 / 403 |
+| PATCH | `/api/reports/{id}` | Admin: set the status (UnderReview / Resolved / Dismissed) | 204 / 400 / 403 / 404 |
 
-- [ ] Put the status rules in small methods on `Job` and `JobApplication` (`CanAccept`, `CanComplete`, `CanCancel`, `CanWithdraw`), so they can be tested without HTTP.
-- [ ] Create the admin user at startup if none exists, with the password from user-secrets (`SeedAdmin:Password`).
-- [ ] Listen on `http://0.0.0.0:5080`, and add a Windows firewall rule for port 5080.
-- [ ] Update `UniMate.Api.http` with an example request for every endpoint.
-- [ ] xUnit tests for the status rules and for duplicate applications.
-- [ ] Check every endpoint in Swagger. Commit: *"Add minimal API with EF Core and PostgreSQL"*.
+Action endpoints (accept, complete, cancel, withdraw) take `{ "userId": "..." }` in the body.
+
+- [x] Put the status rules in small methods on `Job` and `JobApplication` (`CanApply`, `CanAccept`, `CanComplete`, `CanCancel`, `CanWithdraw`, plus `Accept`/`Complete`/`Cancel`/`Withdraw`), so they can be tested without HTTP.
+- [x] Create the admin user (`admin@unimate.app`) at startup if none exists, with the password from config (`SeedAdmin:Password`: user-secrets locally, an env var on Render).
+- [x] Apply migrations at startup (`MigrateAsync`), so a new database (Neon) is set up on the first run.
+- [x] Swagger on in every environment, so the deployed API can be shown.
+- [x] Update `UniMate.Api.http` with an example request for every endpoint.
+- [x] xUnit tests for the status rules and for duplicate applications (11 passing).
+- [x] Every endpoint checked (50 requests against a throwaway database, all with the expected status). `API_DESIGN.md` rewritten to match.
+
+## Phase 3b: Deploy (Windows + browser, 1 h)
+Render runs the API from a Dockerfile; Neon hosts PostgreSQL. Both are free with no credit card. Neon's free database doesn't expire, unlike Render's.
+
+- [x] `backend/Dockerfile` (SDK image builds with `dotnet publish`, then the small `aspnet:8.0` image runs it on port 8080) and `backend/.dockerignore` (`**/bin/`, `**/obj/`). Tested locally: the container migrates an empty database, creates the admin once, and serves `/api/health` and `/swagger` in Production.
+- [ ] Neon: create a project, then copy the connection details into Npgsql format: `Host=...;Database=...;Username=...;Password=...;SSL Mode=Require`. Neon shows a `postgresql://` URL, which Npgsql doesn't accept.
+- [ ] Render can't reach the Monash GitLab server, so create a **private** GitHub repo and add it as a second remote: `git remote add github <url>`, then `git push github main`. Monash GitLab stays the submission repo. Push to both after backend changes.
+- [ ] Render: New → Web Service → connect the GitHub repo, root directory `backend`, runtime Docker, free instance.
+- [ ] Render env vars: `ConnectionStrings__Default` (the Neon string) and `SeedAdmin__Password`. The double underscore maps to the `:` in config keys. Never commit these.
+- [ ] Check `https://<service>.onrender.com/api/health` returns `database: true`, then open `/swagger`.
+- [ ] Note: the free service sleeps after ~15 min idle, and the first request after that takes about a minute. Open the health URL before every demo.
+- [ ] Fallback if Render is down on a demo day: run the API on the laptop with `--urls http://0.0.0.0:5080`, open port 5080 in the firewall, and put the laptop and iPad on a phone hotspot.
 
 ## Phase 4: iOS networking and auth (Windows, written without compiling, 1.5 h)
 - [ ] `Services/APIClient.swift`: `get` and `send` built on `URLSession` and `Codable`, with the base URL in one place. Maps errors to friendly messages (can't reach the server, validation messages from 400/409).
 - [ ] `Models/`: `Job`, `JobApplication`, `Category`, `Report` DTO structs that match the API JSON.
 - [ ] `APIAuthService: AuthServicing` replaces `MockAuthService`. Remove forgot password and the reset code from the UI, because they're out of scope.
-- [ ] Add a server address setting on the sign-in screen (stored in `@AppStorage`), so the iPad can point at whichever laptop runs the API without rebuilding.
+- [ ] The base URL is one constant in `APIClient`: the Render HTTPS URL. There's no server address setting, because the API is hosted.
+- [ ] `Info.plist`: remove `NSAllowsArbitraryLoads` and `NSLocalNetworkUsageDescription`, because the hosted API is HTTPS.
 
 ## Phase 5: Core flow screens (Windows, written without compiling, 3 h)
 Role-based tabs in `MainTabView`:
@@ -157,11 +173,9 @@ Role-based tabs in `MainTabView`:
 - [ ] Push the fixes.
 
 ## Phase 8: Test on the iPad and demo plan (Windows + iPad, 1.5 h)
-- [ ] Run the API on Windows, then on the iPad set the server to `http://<windows-ip>:5080`.
-- [ ] Run the full flow. Use two accounts on one iPad (sign out and back in), or a second device or the Swagger UI for the "other user".
-- [ ] Failure tests: API stopped, empty or invalid input, negative budget, double tap, applying twice.
+- [ ] Wake the Render API (open `/api/health`), then run the full flow. Use two accounts on one iPad (sign out and back in), or a second device or the Swagger UI for the "other user".
+- [ ] Failure tests: Airplane Mode (offline), empty or invalid input, negative budget, double tap, applying twice.
 - [ ] P7 checks: dark mode, the largest accessibility text size (Settings → Accessibility → Display & Text Size → Larger Text), and portrait and landscape on every screen.
-- [ ] **Demo network:** check whether the lab Wi-Fi lets the iPad reach the laptop. If it doesn't, use a **phone hotspot** with both the laptop and the iPad on it. That's the simplest option. Cloud hosting is the alternative (an optional extra, not planned).
 - [ ] List the bugs and fix them on Windows.
 
 ## Mac session 2: final build (target: 1 h, within 7 days of the Week 12 lab)
@@ -169,11 +183,11 @@ Role-based tabs in `MainTabView`:
 - [ ] Repeat a quick reinstall before the Week 14/15 P9 demo, because free provisioning expires after 7 days.
 
 ## Phase 9: Submit
-- [ ] README: run Postgres (`docker compose up`), set user-secrets, `dotnet ef database update`, `dotnet run`, then build the app and set the server address.
+- [ ] README: the live API URL. To run locally: start Postgres (`docker compose up`), set user-secrets, `dotnet run` (migrations apply on start). Deploy: Render + Neon env vars.
 - [ ] Commit, push, and submit the P9 repo link on OnTrack. In the comment, ask whether the self-built ASP.NET API meets the web service requirement, and mention that offers and matching were cut.
 - [ ] Make sure the P6 on OnTrack is the revised ASP.NET version.
 - [ ] **Week 12 lab:** P7 demo on the iPad (toggle dark mode, change text size, rotate).
-- [ ] **Week 14/15:** P9 demo. Be ready to explain: SwiftUI view → `APIClient` → endpoint → EF Core → Postgres; SwiftData as the device cache; the status rules and tests; what was cut and why.
+- [ ] **Week 14/15:** P9 demo. Be ready to explain: SwiftUI view → `APIClient` → endpoint (Render) → EF Core → Postgres (Neon); SwiftData as the device cache; the status rules and tests; what was cut and why.
 
 ## If time runs short
 Cut in this order: admin reports → the SwiftData offline cache (keep the remembered sign-in, so persistence still exists) → pull-to-refresh.

@@ -1,6 +1,99 @@
-@UniMate.Api_HostAddress = http://localhost:5034
+# Example requests for every endpoint. Run them from VS Code (REST Client) or Rider.
+# Run them in order: register, then paste the ids you get back into the variables below.
+@host = http://localhost:5034
+@clientId = 00000000-0000-0000-0000-000000000000
+@freelancerId = 00000000-0000-0000-0000-000000000000
+@adminId = 00000000-0000-0000-0000-000000000000
+@jobId = 00000000-0000-0000-0000-000000000000
+@applicationId = 00000000-0000-0000-0000-000000000000
+@reportId = 00000000-0000-0000-0000-000000000000
 
-GET {{UniMate.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health
+GET {{host}}/api/health
 
-###
+### Register a client
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{ "email": "cleo@test.com", "password": "password1", "firstName": "Cleo", "lastName": "Client", "role": "Client" }
+
+### Register a freelancer
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{ "email": "fay@test.com", "password": "password1", "firstName": "Fay", "lastName": "Free", "role": "Freelancer" }
+
+### Log in (the admin's password is SeedAdmin:Password)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "admin@unimate.app", "password": "your-admin-password" }
+
+### Categories
+GET {{host}}/api/categories
+
+### Post a job
+POST {{host}}/api/jobs
+Content-Type: application/json
+
+{ "clientId": "{{clientId}}", "categoryId": 1, "title": "Move a couch", "description": "Two flights of stairs", "budget": 60, "suburb": "Clayton", "scheduledAt": "2026-12-01T10:00:00+11:00" }
+
+### Browse open jobs (filters are optional: status, categoryId, clientId)
+GET {{host}}/api/jobs?status=Open
+
+### My jobs (client)
+GET {{host}}/api/jobs?clientId={{clientId}}
+
+### Job detail
+GET {{host}}/api/jobs/{{jobId}}
+
+### Apply
+POST {{host}}/api/jobs/{{jobId}}/applications
+Content-Type: application/json
+
+{ "freelancerId": "{{freelancerId}}", "message": "I have a ute and can help" }
+
+### Applicants for a job
+GET {{host}}/api/jobs/{{jobId}}/applications
+
+### My work (freelancer)
+GET {{host}}/api/applications?freelancerId={{freelancerId}}
+
+### Accept an application (client)
+POST {{host}}/api/applications/{{applicationId}}/accept
+Content-Type: application/json
+
+{ "userId": "{{clientId}}" }
+
+### Withdraw an application (freelancer, only while Pending)
+POST {{host}}/api/applications/{{applicationId}}/withdraw
+Content-Type: application/json
+
+{ "userId": "{{freelancerId}}" }
+
+### Complete a job (client, only when Assigned)
+POST {{host}}/api/jobs/{{jobId}}/complete
+Content-Type: application/json
+
+{ "userId": "{{clientId}}" }
+
+### Cancel a job (client, only when Open)
+POST {{host}}/api/jobs/{{jobId}}/cancel
+Content-Type: application/json
+
+{ "userId": "{{clientId}}" }
+
+### Report a job
+POST {{host}}/api/reports
+Content-Type: application/json
+
+{ "reporterId": "{{freelancerId}}", "jobId": "{{jobId}}", "reason": "NoShow", "details": "Nobody was home" }
+
+### Reports (admin)
+GET {{host}}/api/reports?userId={{adminId}}
+
+### Update a report (admin)
+PATCH {{host}}/api/reports/{{reportId}}
+Content-Type: application/json
+
+{ "userId": "{{adminId}}", "status": "Resolved" }

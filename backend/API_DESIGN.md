@@ -1,218 +1,75 @@
 # UniMate API Design
 
-List of planned API endpoints for the backend. Only `/api/health` is built
-right now. Everything else is planned. Mark a row as Done only after it is
-actually implemented in code.
+Everything below is implemented. Swagger shows the same list at `/swagger`.
 
 ## Base
 
-Base URL (dev): http://localhost:5034
-Format: JSON
-Auth: not implemented yet. Plan is JWT bearer tokens from `/api/auth/login`,
-sent in the Authorization header.
-Status codes used: 200, 201, 204, 400, 401, 403, 404
-Requests and responses use DTOs, not EF entities directly.
+- Local: `http://localhost:5034`. Live: the Render URL (Phase 3b).
+- JSON in and out, camelCase. Enums are sent as text (`"Open"`, `"Client"`).
+- Requests and responses use DTOs (`UniMate.Api/Dtos`), never EF entities.
+- Every error has the same body: `{ "message": "..." }`.
+- **No tokens.** Login returns the user. The app keeps the user's `id` and sends it with each action (`clientId`, `freelancerId` or `userId`). The API checks that the user is allowed. This is a known limitation: the next step would be JWT, where the id comes from a signed token instead of the body.
+
+| Code | Meaning |
+|---|---|
+| 200 | Here's the data |
+| 201 | Created (the new item is in the body) |
+| 204 | Done, nothing to return |
+| 400 | Invalid input, or the status rules don't allow it |
+| 401 | Wrong email or password |
+| 403 | This user isn't allowed |
+| 404 | Not found |
+| 409 | Already exists (email taken, already applied) |
 
 ## Endpoints
 
-### Health
+| Method | Route | Purpose | Responses |
+|---|---|---|---|
+| GET | `/api/health` | API and database check | 200 |
+| POST | `/api/auth/register` | Create a Client or Freelancer | 201 / 400 / 409 |
+| POST | `/api/auth/login` | Returns a `UserDto` | 200 / 401 |
+| GET | `/api/categories` | Categories for the picker | 200 |
+| GET | `/api/jobs?status=&categoryId=&clientId=` | Browse jobs / my jobs (all filters optional) | 200 |
+| GET | `/api/jobs/{id}` | Job detail | 200 / 404 |
+| POST | `/api/jobs` | Post a job (clients only) | 201 / 400 / 403 |
+| POST | `/api/jobs/{id}/complete` | Assigned → Completed (the job's client) | 204 / 400 / 403 / 404 |
+| POST | `/api/jobs/{id}/cancel` | Open → Cancelled (the job's client) | 204 / 400 / 403 / 404 |
+| GET | `/api/jobs/{id}/applications` | Applicants for a job | 200 / 404 |
+| POST | `/api/jobs/{id}/applications` | Apply (freelancers only, once per job) | 201 / 400 / 403 / 404 / 409 |
+| GET | `/api/applications?freelancerId=` | A freelancer's applications (My Work) | 200 |
+| POST | `/api/applications/{id}/accept` | Accept: job becomes Assigned, other pending applications Rejected | 204 / 400 / 403 / 404 |
+| POST | `/api/applications/{id}/withdraw` | Pending → Withdrawn (the freelancer who applied) | 204 / 400 / 403 / 404 |
+| POST | `/api/reports` | Report a job | 201 / 400 / 404 |
+| GET | `/api/reports?userId=` | All reports (admin) | 200 / 403 |
+| PATCH | `/api/reports/{id}` | Set status to UnderReview / Resolved / Dismissed (admin) | 204 / 400 / 403 / 404 |
 
-| Method | Route         | Purpose        | Auth | Status |
-|--------|---------------|----------------|------|--------|
-| GET    | `/api/health` | Liveness check | No   | Done   |
+Action bodies (accept, withdraw, complete, cancel): `{ "userId": "..." }`.
+Example requests for every route are in `UniMate.Api/UniMate.Api.http`.
 
-### Auth
+## Status rules
 
-| Method | Route                | Purpose                              | Auth | Status  |
-|--------|----------------------|---------------------------------------|------|---------|
-| POST   | `/api/auth/register` | Create account (Employer or Freelancer) | No | Planned |
-| POST   | `/api/auth/login`    | Log in, returns bearer token          | No   | Planned |
+These live in `Job` and `JobApplication` (Domain) and are unit-tested in `UniMate.Tests/JobRulesTests.cs`.
 
-### Users
-
-| Method | Route           | Purpose                            | Auth | Status  |
-|--------|-----------------|--------------------------------------|------|---------|
-| GET    | `/api/users/me` | Get current user's base profile      | Yes  | Planned |
-| PATCH  | `/api/users/me` | Update current user's base profile   | Yes  | Planned |
-
-### Employers
-
-| Method | Route                 | Purpose                | Auth | Status  |
-|--------|-----------------------|--------------------------|------|---------|
-| GET    | `/api/employers/{id}` | Get an employer profile | Yes  | Planned |
-| POST   | `/api/employers`      | Create employer profile | Yes  | Planned |
-| PATCH  | `/api/employers/{id}` | Update employer profile | Yes  | Planned |
-
-### Freelancers
-
-| Method | Route                   | Purpose                                              | Auth | Status  |
-|--------|-------------------------|--------------------------------------------------------|------|---------|
-| GET    | `/api/freelancers`      | Search freelancers by category, location, rating       | Yes  | Planned |
-| GET    | `/api/freelancers/{id}` | Get a freelancer profile                               | Yes  | Planned |
-| POST   | `/api/freelancers`      | Create freelancer profile                              | Yes  | Planned |
-| PATCH  | `/api/freelancers/{id}` | Update freelancer profile (skills, availability)       | Yes  | Planned |
-
-### Categories
-
-| Method | Route             | Purpose                            | Auth | Status  |
-|--------|-------------------|---------------------------------------|------|---------|
-| GET    | `/api/categories` | List categories with nested skills    | No   | Planned |
-
-### Jobs
-
-| Method | Route            | Purpose                                        | Auth | Status  |
-|--------|------------------|---------------------------------------------------|------|---------|
-| GET    | `/api/jobs`      | Search jobs by category, location, status         | Yes  | Planned |
-| GET    | `/api/jobs/{id}` | Get a single job                                   | Yes  | Planned |
-| POST   | `/api/jobs`      | Employer creates a job                             | Yes  | Planned |
-| PATCH  | `/api/jobs/{id}` | Employer updates a job                             | Yes  | Planned |
-| DELETE | `/api/jobs/{id}` | Employer cancels a job                             | Yes  | Planned |
-
-### Proposals
-
-| Method | Route                         | Purpose                            | Auth | Status  |
-|--------|-------------------------------|---------------------------------------|------|---------|
-| GET    | `/api/jobs/{jobId}/proposals` | Employer views proposals for their job | Yes | Planned |
-| POST   | `/api/jobs/{jobId}/proposals` | Freelancer submits a proposal          | Yes | Planned |
-| GET    | `/api/proposals/{id}`         | Get a single proposal                  | Yes | Planned |
-| PATCH  | `/api/proposals/{id}`         | Freelancer withdraws or edits proposal | Yes | Planned |
-
-### Offers
-
-| Method | Route              | Purpose                                | Auth | Status  |
-|--------|--------------------|-------------------------------------------|------|---------|
-| POST   | `/api/offers`      | Employer sends an offer for a proposal    | Yes  | Planned |
-| GET    | `/api/offers/{id}` | Get a single offer                        | Yes  | Planned |
-| PATCH  | `/api/offers/{id}` | Freelancer accepts or declines an offer   | Yes  | Planned |
-
-### Matches
-
-This is the weighted matching algorithm from the P6 proposal (category,
-distance, availability, language, rating, experience).
-
-| Method | Route                       | Purpose                                | Auth | Status  |
-|--------|-----------------------------|--------------------------------------------|------|---------|
-| GET    | `/api/jobs/{jobId}/matches` | Ranked freelancer recommendations for a job | Yes | Planned |
-
-### Reports
-
-| Method | Route               | Purpose                                     | Auth  | Status  |
-|--------|---------------------|--------------------------------------------------|-------|---------|
-| POST   | `/api/reports`      | Submit a report against a user or job            | Yes   | Planned |
-| GET    | `/api/reports`      | Admin lists reports                              | Admin | Planned |
-| PATCH  | `/api/reports/{id}` | Admin updates report status or suspends a user   | Admin | Planned |
-
-## Examples
-
-These show the planned request and response shape. None of these routes are
-built yet except health.
-
-### POST /api/auth/register
-
-Request:
-```json
-{
-  "email": "alex@student.monash.edu",
-  "password": "min-8-characters",
-  "firstName": "Alex",
-  "lastName": "Tan",
-  "role": "Freelancer"
-}
+```
+Job:         Open → Assigned → Completed
+             Open → Cancelled
+Application: Pending → Accepted | Rejected | Withdrawn
+Report:      Open → UnderReview → Resolved | Dismissed
 ```
 
-Response, 201 Created:
-```json
-{
-  "id": "3f1b2c40-1234-4a2b-9f00-abcdef123456",
-  "email": "alex@student.monash.edu",
-  "role": "Freelancer",
-  "createdAt": "2026-09-17T09:00:00Z"
-}
-```
+- Apply only to an Open job, once per freelancer. Withdrawing is final, so you can't reapply. The unique (JobId, FreelancerId) index backs this up.
+- Accepting one application rejects the other pending ones in the same save.
+- Cancelling a job rejects its pending applications.
 
-### POST /api/jobs
+## Data
 
-Request:
-```json
-{
-  "title": "Help moving a couch",
-  "categoryId": "moving",
-  "description": "Need one person for about an hour, ground floor only.",
-  "date": "2026-09-20",
-  "generalLocation": "Clayton, near campus",
-  "budget": 30
-}
-```
+PostgreSQL through EF Core (`UniMate.Api/Data/AppDbContext.cs`). Tables: Users, Categories (6 seeded), Jobs, JobApplications, Reports. Migrations apply automatically when the API starts. The admin user (`admin@unimate.app`) is created at startup from `SeedAdmin:Password`.
 
-Response, 201 Created:
-```json
-{
-  "id": "a9d4e210-1234-4a2b-9f00-abcdef123456",
-  "title": "Help moving a couch",
-  "categoryId": "moving",
-  "employerId": "8b2f0000-1234-4a2b-9f00-abcdef123456",
-  "status": "Open",
-  "createdAt": "2026-09-17T09:05:00Z"
-}
-```
+## Configuration
 
-### GET /api/jobs/{jobId}/matches
+| Key | Local | Render |
+|---|---|---|
+| `ConnectionStrings:Default` | user-secrets | env var `ConnectionStrings__Default` |
+| `SeedAdmin:Password` | user-secrets | env var `SeedAdmin__Password` |
 
-Response, 200 OK:
-```json
-{
-  "jobId": "a9d4e210-1234-4a2b-9f00-abcdef123456",
-  "matches": [
-    {
-      "freelancerId": "c11a0000-1234-4a2b-9f00-abcdef123456",
-      "name": "Priya S.",
-      "score": 0.87,
-      "breakdown": {
-        "categoryMatch": 0.3,
-        "distance": 0.2,
-        "availability": 0.15,
-        "rating": 0.12,
-        "experience": 0.1
-      }
-    },
-    {
-      "freelancerId": "d92b0000-1234-4a2b-9f00-abcdef123456",
-      "name": "Wei L.",
-      "score": 0.74,
-      "breakdown": {
-        "categoryMatch": 0.3,
-        "distance": 0.1,
-        "availability": 0.15,
-        "rating": 0.09,
-        "experience": 0.1
-      }
-    }
-  ]
-}
-```
-
-### PATCH /api/offers/{id}
-
-Request:
-```json
-{
-  "status": "Accepted"
-}
-```
-
-Response, 200 OK:
-```json
-{
-  "id": "f0a10000-1234-4a2b-9f00-abcdef123456",
-  "status": "Accepted",
-  "respondedAt": "2026-09-17T10:00:00Z"
-}
-```
-
-## Conventions
-
-Plural nouns for collections, for example `/api/jobs`, `/api/users`.
-Nested routes only when a resource belongs to a parent, for example
-`/api/jobs/{jobId}/proposals`.
-IDs are GUIDs, matching EF Core default keys.
-Timestamps are ISO 8601 UTC.
+Never put either value in `appsettings.json` or git.
