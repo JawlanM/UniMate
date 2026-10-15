@@ -41,11 +41,14 @@ Rules, enforced in the API and covered by tests:
 
 ---
 
-## Phase 0: Repo safety and project settings (Windows, 30 min)
-- [ ] Commit the current uncommitted redesign: *"Move redesign into Xcode project"*.
-- [ ] In `project.pbxproj`: `IPHONEOS_DEPLOYMENT_TARGET = 17.0`, add the `UIAppFonts` key, and a local-network usage description (needed so the iPad can reach the LAN API).
-- [ ] Add `Info.plist` keys: `NSAppTransportSecurity` → `NSAllowsLocalNetworking`, so HTTP to the LAN API is allowed. If the iPad still refuses the IP address, fall back to `NSAllowsArbitraryLoads` for the demo build.
-- [ ] Delete the template `ContentView.swift`.
+## Phase 0: Repo safety and project settings (Windows): DONE 2026-10-15
+- [x] Committed the redesign (`6072f6f`).
+- [x] The target is now iOS-only (iPhone and iPad), with `IPHONEOS_DEPLOYMENT_TARGET = 17.0`. Removed the macOS, visionOS and Catalyst settings and the app sandbox. The display name is "UniMate".
+- [x] `ios/PortfolioApp/Info.plist` is merged with the generated plist (`INFOPLIST_FILE`). It sits outside the synced folder, so it isn't copied as a resource. It contains:
+  - `UIAppFonts`, for the 3 Bricolage files,
+  - `NSAllowsArbitraryLoads`, because the API is plain HTTP on a LAN IP (chosen so we don't burn Mac time testing `NSAllowsLocalNetworking`),
+  - `NSLocalNetworkUsageDescription`.
+- [x] Deleted the template `ContentView.swift`.
 
 ## Phase 1: P7 foundation (Windows, 1 h)
 - [ ] `Theme.swift`: make every `UniColor` adaptive with `UIColor { traits in … }`. Pick dark values for canvas, sunken, raised, hairline, the ink colours, the washes and the accents, and lower the shadow opacity in dark mode.
