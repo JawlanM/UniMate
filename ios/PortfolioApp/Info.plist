@@ -9,14 +9,5 @@
 		<string>BricolageGrotesque-Bold.ttf</string>
 		<string>BricolageGrotesque-ExtraBold.ttf</string>
 	</array>
-	<!-- The API runs on a laptop over plain HTTP (http://<laptop-ip>:5080) during
-	     development and the demo, so ATS has to allow non-HTTPS loads. -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>UniMate connects to the UniMate server running on your local network.</string>
 </dict>
 </plist>
