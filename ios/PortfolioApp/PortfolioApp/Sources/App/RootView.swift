@@ -20,10 +20,9 @@ struct RootView: View {
 enum AuthRoute: Hashable {
     case signIn
     case register
-    case forgotPassword
 }
 
-/// Welcome → Sign in / Create account / Forgot password.
+/// Welcome → Sign in / Create account.
 struct AuthFlowView: View {
     var body: some View {
         NavigationStack {
@@ -32,7 +31,6 @@ struct AuthFlowView: View {
                     switch route {
                     case .signIn: SignInView()
                     case .register: RegisterView()
-                    case .forgotPassword: ForgotPasswordView()
                     }
                 }
         }

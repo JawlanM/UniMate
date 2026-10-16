@@ -28,16 +28,6 @@ struct SignInView: View {
                 LabeledInput(label: "Student email", text: $email, kind: .email)
                 LabeledInput(label: "Password", text: $password, kind: .password)
 
-                HStack {
-                    Spacer()
-                    NavigationLink(value: AuthRoute.forgotPassword) {
-                        Text("Forgot password?")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(UniColor.ember)
-                            .frame(minHeight: 44)
-                    }
-                }
-
                 if let errorMessage {
                     ErrorBanner(message: errorMessage)
                 }
