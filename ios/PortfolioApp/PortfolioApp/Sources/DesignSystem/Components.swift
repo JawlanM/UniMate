@@ -329,7 +329,7 @@ struct MatchOrbit<Center: View>: View {
     }
 
     private func point(for node: OrbitNode, mid: CGPoint, maxR: CGFloat) -> CGPoint {
-        let radians = node.angle * .pi / 180
+        let radians = CGFloat(node.angle) * .pi / 180
         let r = maxR * node.distance
         return CGPoint(x: mid.x + cos(radians) * r, y: mid.y + sin(radians) * r)
     }
