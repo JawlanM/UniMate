@@ -1,10 +1,14 @@
 # UniMate Dev Plan (Pass scope)
 
-Last updated: 2026-10-15. Replaces the 2026-10-09 plan.
+Last updated: 2026-10-17. Replaces the 2026-10-09 plan.
 
-**Goal:** finish P9 (complete app plus About page, submitted on OnTrack) and P7 (dark mode, Dynamic Type, orientation) together. P8 was submitted on 2026-10-15.
+**Goal:** finish P9: the complete app plus an About page, submitted on OnTrack, then a live demo and discussion in Week 14/15.
 
-**Hard deadline:** the P7 lab demo must happen in the **Week 12 lab** (next week). If labs aren't done by Week 12, the task fails. The P9 demo is in Week 14/15.
+**Done:**
+- P8 was submitted on 2026-10-15.
+- P7 was submitted on 2026-10-17 with Simulator screenshots (light/dark, Dynamic Type, Large Content Viewer, portrait/landscape). No live demo was needed.
+
+**Next deadline:** the P9 demo in Week 14/15.
 
 ## Working constraints
 
@@ -13,8 +17,8 @@ Last updated: 2026-10-15. Replaces the 2026-10-09 plan.
 - **Mac time is scarce** (borrowed laptop). Do everything possible on Windows, and use the Mac only to compile, fix and install.
 - **Windows** has the .NET 8 SDK and Docker. The backend is built, run and tested fully here. Swift is written here without compiling, so it needs careful, conservative code.
 - **Testing device: the user's iPad.** It's installed from the Mac with a free Apple ID.
-  - Free provisioning expires after **7 days**, so reinstall within 7 days of each demo (Week 12 lab and Week 14/15).
-  - Check the iPad's iOS version. The project currently targets **iOS 26.5**. Phase 0 lowers it to **17.0**, the lowest version that has SwiftData, `@Observable` and `ContentUnavailableView`.
+  - Free provisioning expires after **7 days**, so install within 7 days of the Week 14/15 P9 demo.
+  - The project targets **iOS 17.0**, the lowest version that has SwiftData, `@Observable` and `ContentUnavailableView`.
 - **The API is hosted on Render, and the database on Neon** (Phase 3b). The iPad reaches it over HTTPS from any network, so the demo doesn't depend on the laptop, the lab Wi-Fi or a firewall. Locally the API still runs on `localhost` with the Docker Postgres for development.
 
 ## Decisions (2026-10-15)
@@ -53,7 +57,7 @@ Rules, enforced in the API and covered by tests:
   - `NSLocalNetworkUsageDescription`.
 - [x] Deleted the template `ContentView.swift`.
 
-## Phase 1: P7 foundation (Windows): DONE 2026-10-15 (code only, not compiled yet)
+## Phase 1: P7 foundation (Windows): DONE 2026-10-15, P7 SUBMITTED 2026-10-17
 - [x] `Theme.swift`: every `UniColor` is adaptive through `Color.adaptive(light:dark:)` (`UIColor { traits in … }`). New tokens:
   - `onApricot`: always dark, because apricot is light in both modes,
   - `bar` and `onBar`: the tab bar stays dark,
@@ -64,7 +68,7 @@ Rules, enforced in the API and covered by tests:
 - [x] Tab bar: `.dynamicTypeSize(...xxxLarge)` and `.accessibilityShowsLargeContentViewer`, matching the system tab bar.
 - [x] Orientation: every remaining screen already scrolls. `readableWidth()` (max 640, centred) is applied to Welcome, Sign in, Register and Profile.
 - [x] The fixed `.system(size:)` fonts that remain are only in screens deleted in Phase 4/7 (score ring, stars, forgot password). The avatar initials keep a fixed size on purpose: they fit the circle and are hidden from VoiceOver.
-- [ ] Verify on the iPad in Mac session 1: Light/Dark on each screen, the largest accessibility text size, the Large Content Viewer on the tab bar, and rotation.
+- [x] Verified in the Xcode Simulator on 2026-10-17 and submitted as screenshots: Light/Dark, the largest accessibility text size, the Large Content Viewer on the tab bar, and rotation.
 - Rule for later phases: new screens use only `UniColor`, `UniFont` and `readableWidth()`, so P7 stays consistent.
 
 ## Phase 2: Simplify the backend (Windows): DONE 2026-10-15
@@ -120,11 +124,14 @@ Action endpoints (accept, complete, cancel, withdraw) take `{ "userId": "..." }`
 Render runs the API from a Dockerfile; Neon hosts PostgreSQL. Both are free with no credit card. Neon's free database doesn't expire, unlike Render's.
 
 - [x] `backend/Dockerfile` (SDK image builds with `dotnet publish`, then the small `aspnet:8.0` image runs it on port 8080) and `backend/.dockerignore` (`**/bin/`, `**/obj/`). Tested locally: the container migrates an empty database, creates the admin once, and serves `/api/health` and `/swagger` in Production.
-- [ ] Neon: create a project, then copy the connection details into Npgsql format: `Host=...;Database=...;Username=...;Password=...;SSL Mode=Require`. Neon shows a `postgresql://` URL, which Npgsql doesn't accept.
-- [ ] Render can't reach the Monash GitLab server, so create a **private** GitHub repo and add it as a second remote: `git remote add github <url>`, then `git push github main`. Monash GitLab stays the submission repo. Push to both after backend changes.
-- [ ] Render: New → Web Service → connect the GitHub repo, root directory `backend`, runtime Docker, free instance.
-- [ ] Render env vars: `ConnectionStrings__Default` (the Neon string) and `SeedAdmin__Password`. The double underscore maps to the `:` in config keys. Never commit these.
-- [ ] Check `https://<service>.onrender.com/api/health` returns `database: true`, then open `/swagger`.
+- [x] Neon: create a project, then copy the connection details into Npgsql format: `Host=...;Database=...;Username=...;Password=...;SSL Mode=Require`. Neon shows a `postgresql://` URL, which Npgsql doesn't accept.
+- [x] Render can't reach the Monash GitLab server, so the repo is also on GitHub: `github.com/JawlanM/sideGigs`, remote `github`, public by the user's choice. Monash GitLab stays the submission repo. Push to both remotes after every change.
+- [x] Neon settings: Sydney region, Postgres 16, connection pooling off.
+- [x] Render: New → Web Service → connect the GitHub repo, root directory `backend`, runtime Docker, Singapore region, free instance, health check path `/api/health`.
+- [x] Render env vars: `ConnectionStrings__Default` (the Neon string), `SeedAdmin__Password` and `PORT=8080`. The double underscore maps to the `:` in config keys. Never commit these.
+- [x] Live at **`https://unimate-dkrj.onrender.com`**. `/api/health` returns 200, and `/api/categories` returns the 6 seeded categories, so migrations ran on Neon.
+- [x] Swagger UI said "does not specify a valid version field": `Microsoft.AspNetCore.OpenApi` 8.0.31 pulls in `Microsoft.OpenApi` 1.6.30, which writes `openapi: 3.0.4`, and the UI bundled with Swashbuckle 6.6.2 only accepts 3.0.0–3.0.3. Fixed by upgrading to Swashbuckle 7.3.2.
+- [ ] Confirm `/swagger` loads after the redeploy, and that the admin login works there.
 - [ ] Note: the free service sleeps after ~15 min idle, and the first request after that takes about a minute. Open the health URL before every demo.
 - [ ] Fallback if Render is down on a demo day: run the API on the laptop with `--urls http://0.0.0.0:5080`, open port 5080 in the firewall, and put the laptop and iPad on a phone hotspot.
 
@@ -166,32 +173,37 @@ Role-based tabs in `MainTabView`:
   - acknowledgements: Bricolage Grotesque (SIL Open Font License), SF Symbols, ASP.NET Core, Entity Framework Core, Npgsql, PostgreSQL, Swashbuckle, and a generative AI acknowledgement.
 - [ ] Commit.
 
-## Mac session 1: compile and install (target: 2 h)
+## Mac session 1: first compile: DONE 2026-10-17
+- [x] The pre-Phase-4 app builds in Xcode. The only error was an ambiguous `cos`/`sin` call in `MatchOrbit` (`bb6737f`).
+- [x] P7 screenshots taken in the Simulator.
+- Not installed on the iPad yet. The install waits for Mac session 2, because free provisioning lasts 7 days.
+- Before the next Mac commit, `git pull` on the Mac, or discard its local copy of the cos fix.
+
+## Mac session 2: compile the full app (target: 2 h, after Phase 7)
 - [ ] Pull the repo, open the project, and set the Team to your free Apple ID. Change the bundle ID if Xcode asks.
-- [ ] Build and fix compile errors. Paste the errors to Claude in batches.
+- [ ] Build and fix compile errors from Phases 4–7. Paste the errors to Claude in batches.
 - [ ] Install on the iPad (trust the developer certificate in Settings → General → VPN & Device Management).
-- [ ] Push the fixes.
+- [ ] Push the fixes to both remotes.
 
 ## Phase 8: Test on the iPad and demo plan (Windows + iPad, 1.5 h)
 - [ ] Wake the Render API (open `/api/health`), then run the full flow. Use two accounts on one iPad (sign out and back in), or a second device or the Swagger UI for the "other user".
 - [ ] Failure tests: Airplane Mode (offline), empty or invalid input, negative budget, double tap, applying twice.
-- [ ] P7 checks: dark mode, the largest accessibility text size (Settings → Accessibility → Display & Text Size → Larger Text), and portrait and landscape on every screen.
+- [ ] Quick check of the new screens: dark mode, large text and landscape. They should be consistent with P7 if they only use `UniColor`, `UniFont` and `readableWidth()`.
 - [ ] List the bugs and fix them on Windows.
 
-## Mac session 2: final build (target: 1 h, within 7 days of the Week 12 lab)
+## Mac session 3: final build (target: 1 h, within 7 days of the Week 14/15 P9 demo)
 - [ ] Pull, build and reinstall on the iPad. Smoke test.
-- [ ] Repeat a quick reinstall before the Week 14/15 P9 demo, because free provisioning expires after 7 days.
+- [ ] If Mac sessions 2 and 3 can be combined within the 7-day window, do them in one visit.
 
 ## Phase 9: Submit
 - [ ] README: the live API URL. To run locally: start Postgres (`docker compose up`), set user-secrets, `dotnet run` (migrations apply on start). Deploy: Render + Neon env vars.
 - [ ] Commit, push, and submit the P9 repo link on OnTrack. In the comment, ask whether the self-built ASP.NET API meets the web service requirement, and mention that offers and matching were cut.
 - [ ] Make sure the P6 on OnTrack is the revised ASP.NET version.
-- [ ] **Week 12 lab:** P7 demo on the iPad (toggle dark mode, change text size, rotate).
 - [ ] **Week 14/15:** P9 demo. Be ready to explain: SwiftUI view → `APIClient` → endpoint (Render) → EF Core → Postgres (Neon); SwiftData as the device cache; the status rules and tests; what was cut and why.
 
 ## If time runs short
 Cut in this order: admin reports → the SwiftData offline cache (keep the remembered sign-in, so persistence still exists) → pull-to-refresh.
-Never cut: P7, the core flow, error states, About.
+Never cut: the core flow, error states, About, or the P7 rules in new screens.
 
 ## Dropped (no work)
 MapKit/Core Location, notifications, the matching algorithm and score UI, Swift Charts, reviews/ratings, direct offers, JWT and refresh tokens, forgot password, C1/C2/HD1.
