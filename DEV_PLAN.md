@@ -120,7 +120,7 @@ Action endpoints (accept, complete, cancel, withdraw) take `{ "userId": "..." }`
 - [x] xUnit tests for the status rules and for duplicate applications (11 passing).
 - [x] Every endpoint checked (50 requests against a throwaway database, all with the expected status). `API_DESIGN.md` rewritten to match.
 
-## Phase 3b: Deploy (Windows + browser, 1 h)
+## Phase 3b: Deploy (Windows + browser): DONE 2026-10-17
 Render runs the API from a Dockerfile; Neon hosts PostgreSQL. Both are free with no credit card. Neon's free database doesn't expire, unlike Render's.
 
 - [x] `backend/Dockerfile` (SDK image builds with `dotnet publish`, then the small `aspnet:8.0` image runs it on port 8080) and `backend/.dockerignore` (`**/bin/`, `**/obj/`). Tested locally: the container migrates an empty database, creates the admin once, and serves `/api/health` and `/swagger` in Production.
@@ -131,16 +131,20 @@ Render runs the API from a Dockerfile; Neon hosts PostgreSQL. Both are free with
 - [x] Render env vars: `ConnectionStrings__Default` (the Neon string), `SeedAdmin__Password` and `PORT=8080`. The double underscore maps to the `:` in config keys. Never commit these.
 - [x] Live at **`https://unimate-dkrj.onrender.com`**. `/api/health` returns 200, and `/api/categories` returns the 6 seeded categories, so migrations ran on Neon.
 - [x] Swagger UI said "does not specify a valid version field": `Microsoft.AspNetCore.OpenApi` 8.0.31 pulls in `Microsoft.OpenApi` 1.6.30, which writes `openapi: 3.0.4`, and the UI bundled with Swashbuckle 6.6.2 only accepts 3.0.0–3.0.3. Fixed by upgrading to Swashbuckle 7.3.2.
-- [ ] Confirm `/swagger` loads after the redeploy, and that the admin login works there.
+- [x] `/swagger` loads after the redeploy, and the admin login returns 200.
 - [ ] Note: the free service sleeps after ~15 min idle, and the first request after that takes about a minute. Open the health URL before every demo.
 - [ ] Fallback if Render is down on a demo day: run the API on the laptop with `--urls http://0.0.0.0:5080`, open port 5080 in the firewall, and put the laptop and iPad on a phone hotspot.
 
-## Phase 4: iOS networking and auth (Windows, written without compiling, 1.5 h)
-- [ ] `Services/APIClient.swift`: `get` and `send` built on `URLSession` and `Codable`, with the base URL in one place. Maps errors to friendly messages (can't reach the server, validation messages from 400/409).
-- [ ] `Models/`: `Job`, `JobApplication`, `Category`, `Report` DTO structs that match the API JSON.
-- [ ] `APIAuthService: AuthServicing` replaces `MockAuthService`. Remove forgot password and the reset code from the UI, because they're out of scope.
-- [ ] The base URL is one constant in `APIClient`: the Render HTTPS URL. There's no server address setting, because the API is hosted.
-- [ ] `Info.plist`: remove `NSAllowsArbitraryLoads` and `NSLocalNetworkUsageDescription`, because the hosted API is HTTPS.
+## Phase 4: iOS networking and auth (Windows): DONE 2026-10-17 (not compiled yet)
+- [x] `Services/APIClient.swift`: `get` and `send` built on `URLSession` and `Codable`, with the base URL in one place. Maps errors to friendly messages (can't reach the server, validation messages from 400/409).
+- [x] `Models/`: `Job`, `JobApplication`, `Category`, `Report` DTO structs that match the API JSON.
+- [x] `APIAuthService: AuthServicing` replaces `MockAuthService`. Remove forgot password and the reset code from the UI, because they're out of scope.
+- [x] The base URL is one constant in `APIClient`: the Render HTTPS URL. There's no server address setting, because the API is hosted.
+- [x] `Info.plist`: remove `NSAllowsArbitraryLoads` and `NSLocalNetworkUsageDescription`, because the hosted API is HTTPS.
+- Notes:
+  - .NET dates have 7 decimal places, so `APIClient` strips the fraction before parsing them as ISO 8601.
+  - `MockAuthService` is kept for `#Preview`s only.
+  - `isVerified` is removed from `AppUser`, because the API doesn't send it.
 
 ## Phase 5: Core flow screens (Windows, written without compiling, 3 h)
 Role-based tabs in `MainTabView`:

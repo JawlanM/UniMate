@@ -9,19 +9,18 @@ enum UserRole: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-// Shape of the `user` object in the planned AuthResponse.
+// Matches the API's UserDto.
 struct AppUser: Identifiable, Hashable, Codable {
     let id: UUID
     var email: String
     var firstName: String
     var lastName: String
     var role: UserRole
-    var isVerified: Bool
 
     var fullName: String { "\(firstName) \(lastName)" }
 }
 
-struct RegistrationRequest {
+struct RegistrationRequest: Encodable {
     var firstName: String
     var lastName: String
     var email: String

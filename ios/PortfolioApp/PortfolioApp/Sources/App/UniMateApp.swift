@@ -2,8 +2,7 @@ import SwiftUI
 
 @main
 struct UniMateApp: App {
-    // Swap MockAuthService for the real API client once the backend auth endpoints exist.
-    @State private var session = AppSession(auth: MockAuthService())
+    @State private var session = AppSession(auth: APIAuthService())
 
     var body: some Scene {
         WindowGroup {

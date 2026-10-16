@@ -59,11 +59,6 @@ struct ProfileView: View {
                 Text(user?.fullName ?? "")
                     .font(UniFont.title)
                     .foregroundStyle(UniColor.ink)
-                if user?.isVerified == true {
-                    Image(systemName: "checkmark.shield.fill")
-                        .foregroundStyle(UniColor.success)
-                        .accessibilityLabel(Text("Verified student"))
-                }
             }
 
             Text(user?.email ?? "")

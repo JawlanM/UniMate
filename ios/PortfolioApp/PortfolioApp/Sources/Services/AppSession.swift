@@ -27,14 +27,6 @@ final class AppSession {
         currentUser = try await auth.register(cleaned)
     }
 
-    func requestPasswordReset(email: String) async throws {
-        try await auth.requestPasswordReset(email: email.trimmed.lowercased())
-    }
-
-    func resetPassword(email: String, code: String, newPassword: String) async throws {
-        try await auth.resetPassword(email: email.trimmed.lowercased(), code: code, newPassword: newPassword)
-    }
-
     func signOut() {
         currentUser = nil
     }
@@ -49,8 +41,7 @@ extension AppSession {
             email: "amara.o@student.monash.edu",
             firstName: "Amara",
             lastName: "Okafor",
-            role: .client,
-            isVerified: true
+            role: .client
         )
         return session
     }
