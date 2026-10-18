@@ -33,16 +33,20 @@ final class AppSession {
 }
 
 extension AppSession {
-    /// Signed-in session for SwiftUI previews.
-    static var preview: AppSession {
+    /// Signed-in client session for SwiftUI previews.
+    static var preview: AppSession { preview(as: .client) }
+
+    /// Signed-in session for SwiftUI previews, as any role.
+    static func preview(as role: UserRole) -> AppSession {
         let session = AppSession(auth: MockAuthService())
-        session.currentUser = AppUser(
-            id: UUID(),
-            email: "amara.o@student.monash.edu",
-            firstName: "Amara",
-            lastName: "Okafor",
-            role: .client
-        )
+        session.currentUser = switch role {
+        case .client:
+            AppUser(id: SampleData.clientId, email: "amara.o@student.monash.edu", firstName: "Amara", lastName: "Okafor", role: .client)
+        case .freelancer:
+            AppUser(id: SampleData.freelancerId, email: "liam.c@student.monash.edu", firstName: "Liam", lastName: "Chen", role: .freelancer)
+        case .admin:
+            AppUser(id: UUID(), email: "admin@unimate.app", firstName: "UniMate", lastName: "Admin", role: .admin)
+        }
         return session
     }
 }

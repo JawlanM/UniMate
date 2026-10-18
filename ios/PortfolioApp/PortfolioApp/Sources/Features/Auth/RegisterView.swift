@@ -66,7 +66,7 @@ struct RegisterView: View {
 
             RoleOptionCard(
                 title: "Find help",
-                message: "Post tasks and get matched with students nearby.",
+                message: "Post jobs and pick a student to help.",
                 systemImage: "person.2",
                 isSelected: role == .client
             ) { role = .client }

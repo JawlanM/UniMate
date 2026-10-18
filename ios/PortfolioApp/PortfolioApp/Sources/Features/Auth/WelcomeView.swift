@@ -16,19 +16,19 @@ struct WelcomeView: View {
                 WelcomeOrbit()
 
                 VStack(alignment: .leading, spacing: Space.sm) {
-                    Text("Campus help, matched to you.")
+                    Text("Campus help, from students.")
                         .font(UniFont.display)
                         .foregroundStyle(UniColor.ink)
                         .accessibilityAddTraits(.isHeader)
 
-                    Text("Post a task and we'll rank verified students near your campus by how well they fit. Or pick up paid work between classes.")
+                    Text("Post a job and students near your campus apply. Or pick up paid work between classes.")
                         .font(.body)
                         .foregroundStyle(UniColor.inkSecondary)
                 }
 
                 FlowLayout(spacing: Space.xs) {
                     Chip(text: "Student email verified", systemImage: "checkmark.shield")
-                    Chip(text: "Ranked by fit", systemImage: "target")
+                    Chip(text: "You pick who helps", systemImage: "hand.thumbsup")
                     Chip(text: "Suburb-level location", systemImage: "location")
                 }
 
@@ -54,11 +54,11 @@ struct WelcomeView: View {
     }
 }
 
-/// Students on radar rings, linked to "you" in the middle. Closer = better match.
+/// Students on radar rings, linked to "you" in the middle.
 private struct WelcomeOrbit: View {
     private let nodes: [OrbitNode] = [
-        .init(name: "Liam Chen", angle: -38, distance: 0.52, size: 52, score: 92),
-        .init(name: "Priya Sharma", angle: 200, distance: 0.62, size: 46, score: 86),
+        .init(name: "Liam Chen", angle: -38, distance: 0.52, size: 52),
+        .init(name: "Priya Sharma", angle: 200, distance: 0.62, size: 46),
         .init(name: "Daniel Park", angle: 115, distance: 0.74, size: 44),
         .init(name: "Sofia Nguyen", angle: 30, distance: 0.95, size: 40),
         .init(name: "Jess Kim", angle: 255, distance: 1.0, size: 36)
@@ -75,7 +75,7 @@ private struct WelcomeOrbit: View {
         }
         .frame(height: 300)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Illustration: nearby students ranked around you by match score."))
+        .accessibilityLabel(Text("Illustration: students around you, ready to help."))
     }
 }
 

@@ -1,73 +1,105 @@
 import SwiftUI
 
 enum MainTab: Hashable {
-    case home, offers, profile
+    case home, myJobs, browse, myWork, reports, profile
+
+    var title: String {
+        switch self {
+        case .home: "Home"
+        case .myJobs: "My jobs"
+        case .browse: "Browse"
+        case .myWork: "My work"
+        case .reports: "Reports"
+        case .profile: "Profile"
+        }
+    }
+
+    /// Outline SF Symbol; the selected tab uses the ".fill" version.
+    var icon: String {
+        switch self {
+        case .home: "house"
+        case .myJobs: "briefcase"
+        case .browse: "magnifyingglass.circle"
+        case .myWork: "tray"
+        case .reports: "flag"
+        case .profile: "person"
+        }
+    }
+
+    /// Which tabs each role sees, left to right.
+    static func tabs(for role: UserRole?) -> [MainTab] {
+        switch role {
+        case .freelancer: [.home, .browse, .myWork, .profile]
+        case .admin: [.reports, .profile]
+        default: [.home, .myJobs, .profile]
+        }
+    }
 }
 
-/// Home, Offers, (+), Profile, with the floating dark tab bar from the C1 design.
+/// Role-based tabs with the floating dark tab bar from the C1 design.
+/// Clients also get the (+) button, which opens Post a job.
 struct MainTabView: View {
     @Environment(AppSession.self) private var session
-    @State private var selection: MainTab = .home
+    @State private var selection: MainTab?
     @State private var isPostingJob = false
 
-    private var canPostJobs: Bool { session.currentUser?.role == .client }
+    private var role: UserRole? { session.currentUser?.role }
+    private var tabs: [MainTab] { MainTab.tabs(for: role) }
+    private var currentTab: MainTab { selection ?? tabs[0] }
 
     var body: some View {
         Group {
-            switch selection {
+            switch currentTab {
             case .home:
-                NavigationStack { HomeView(onPostJob: { isPostingJob = true }) }
-            case .offers:
-                NavigationStack { PlaceholderScreen(title: "Offers", systemImage: "bubble.left.and.bubble.right", message: "Offers you send and receive will show up here.") }
+                NavigationStack {
+                    HomeView(onPostJob: { isPostingJob = true }, onSelectTab: { selection = $0 })
+                }
+            case .myJobs:
+                NavigationStack { JobListView(mode: .myJobs) }
+            case .browse:
+                NavigationStack { JobListView(mode: .browse) }
+            case .myWork:
+                NavigationStack { MyWorkView() }
+            case .reports:
+                NavigationStack { ReportsListView() }
             case .profile:
                 NavigationStack { ProfileView() }
             }
         }
         .safeAreaInset(edge: .bottom) {
-            UniTabBar(selection: $selection, showsPostButton: canPostJobs) {
+            UniTabBar(
+                tabs: tabs,
+                selection: Binding(get: { currentTab }, set: { selection = $0 }),
+                showsPostButton: role == .client
+            ) {
                 isPostingJob = true
             }
         }
         .sheet(isPresented: $isPostingJob) {
-            NavigationStack {
-                PlaceholderScreen(title: "Post a job", systemImage: "square.and.pencil", message: "Job posting comes next.")
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Close") { isPostingJob = false }
-                        }
-                    }
-            }
+            PostJobView()
+        }
+        // A different account can have a different set of tabs.
+        .onChange(of: session.currentUser?.id) {
+            selection = nil
         }
     }
 }
 
 struct UniTabBar: View {
+    let tabs: [MainTab]
     @Binding var selection: MainTab
     var showsPostButton: Bool
     var onPost: () -> Void
 
     var body: some View {
         HStack(spacing: 0) {
-            tabButton(.home, title: "Home", icon: "house")
-            tabButton(.offers, title: "Offers", icon: "bubble.left")
-
-            if showsPostButton {
-                Button(action: onPost) {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(UniColor.onApricot)
-                        .frame(width: 56, height: 56)
-                        .background(UniColor.apricot, in: Circle())
+            ForEach(Array(tabs.enumerated()), id: \.element) { index, tab in
+                // The (+) sits just before Profile.
+                if showsPostButton && index == tabs.count - 1 {
+                    postButton
                 }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity)
-                .accessibilityLabel(Text("Post a job"))
-                .accessibilityShowsLargeContentViewer {
-                    Label("Post a job", systemImage: "plus")
-                }
+                tabButton(tab)
             }
-
-            tabButton(.profile, title: "Profile", icon: "person")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
@@ -80,16 +112,33 @@ struct UniTabBar: View {
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
-    private func tabButton(_ tab: MainTab, title: String, icon: String) -> some View {
+    private var postButton: some View {
+        Button(action: onPost) {
+            Image(systemName: "plus")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(UniColor.onApricot)
+                .frame(width: 56, height: 56)
+                .background(UniColor.apricot, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel(Text("Post a job"))
+        .accessibilityShowsLargeContentViewer {
+            Label("Post a job", systemImage: "plus")
+        }
+    }
+
+    private func tabButton(_ tab: MainTab) -> some View {
         let isSelected = selection == tab
         return Button {
             selection = tab
         } label: {
             VStack(spacing: 4) {
-                Image(systemName: isSelected ? "\(icon).fill" : icon)
+                Image(systemName: isSelected ? "\(tab.icon).fill" : tab.icon)
                     .font(.title3)
-                Text(title)
+                Text(tab.title)
                     .font(.caption.weight(.semibold))
+                    .lineLimit(1)
             }
             .foregroundStyle(isSelected ? UniColor.onBar : UniColor.onBar.opacity(0.62))
             .frame(maxWidth: .infinity, minHeight: 52)
@@ -98,26 +147,22 @@ struct UniTabBar: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityShowsLargeContentViewer {
-            Label(title, systemImage: icon)
+            Label(tab.title, systemImage: tab.icon)
         }
     }
 }
 
-/// Stand-in for screens that aren't built yet.
-struct PlaceholderScreen: View {
-    let title: String
-    let systemImage: String
-    let message: String
-
-    var body: some View {
-        ContentUnavailableView(title, systemImage: systemImage, description: Text(message))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .screenBackground()
-            .navigationTitle(title)
-    }
-}
-
-#Preview {
+#Preview("Client") {
     MainTabView()
         .environment(AppSession.preview)
+}
+
+#Preview("Freelancer") {
+    MainTabView()
+        .environment(AppSession.preview(as: .freelancer))
+}
+
+#Preview("Admin") {
+    MainTabView()
+        .environment(AppSession.preview(as: .admin))
 }

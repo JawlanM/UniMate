@@ -1,12 +1,16 @@
 import SwiftUI
 
-enum HomeRoute: Hashable {
-    case recommendations
-}
-
+/// First tab for clients and freelancers: a greeting, the one job that matters
+/// most right now, shortcuts, and a few recent jobs.
 struct HomeView: View {
     @Environment(AppSession.self) private var session
     var onPostJob: () -> Void
+    var onSelectTab: (MainTab) -> Void
+
+    // TODO: fill these from the API in load().
+    @State private var myJobs: [Job] = SampleData.myJobs
+    @State private var openJobs: [Job] = SampleData.openJobs
+    @State private var myApplications: [JobApplication] = SampleData.myApplications
 
     private var user: AppUser? { session.currentUser }
     private var isFreelancer: Bool { user?.role == .freelancer }
@@ -24,20 +28,10 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: Space.xl) {
                 header
 
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    Text(isFreelancer ? "Let's find your next job" : "Let's find your perfect match")
-                        .font(UniFont.largeTitle)
-                        .foregroundStyle(UniColor.ink)
-                        .accessibilityAddTraits(.isHeader)
-
-                    Button {} label: {
-                        Label("Near Clayton campus", systemImage: "location")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(UniColor.ember)
-                            .frame(minHeight: 44)
-                    }
-                    .accessibilityHint(Text("Change location"))
-                }
+                Text(isFreelancer ? "Let's find your next job" : "What do you need done?")
+                    .font(UniFont.largeTitle)
+                    .foregroundStyle(UniColor.ink)
+                    .accessibilityAddTraits(.isHeader)
 
                 if isFreelancer {
                     freelancerContent
@@ -48,21 +42,18 @@ struct HomeView: View {
             .padding(.horizontal, Space.screen)
             .padding(.top, Space.xs)
             .padding(.bottom, Space.xl)
+            .readableWidth()
         }
-        .refreshable {
-            // Pull-to-refresh, as described in P6. Will re-fetch from the API.
-            try? await Task.sleep(for: .milliseconds(600))
-        }
+        .refreshable { await load() }
+        .task { await load() }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
-        .navigationDestination(for: HomeRoute.self) { route in
-            switch route {
-            case .recommendations: RecommendationsView()
-            }
-        }
-        .navigationDestination(for: MatchPreview.self) { match in
-            FreelancerProfileView(match: match)
-        }
+        .jobNavigation()
+    }
+
+    private func load() async {
+        // TODO: load from the API. Clients need their jobs; freelancers need
+        // open jobs and their own applications.
     }
 
     // MARK: Header
@@ -80,43 +71,34 @@ struct HomeView: View {
             }
             .accessibilityElement(children: .combine)
             Spacer()
-            CircleIconButton(systemImage: "bell", accessibilityText: "Notifications, 1 new", showsBadge: true) {}
-            CircleIconButton(systemImage: "magnifyingglass", accessibilityText: "Search") {}
         }
     }
 
     // MARK: Client
 
     private var clientContent: some View {
-        VStack(alignment: .leading, spacing: Space.xl) {
-            MatchPanel(jobTitle: MockData.topMatchesJobTitle, when: MockData.topMatchesJobWhen, matches: MockData.topMatches)
+        let openCount = myJobs.filter { $0.status == .open }.count
 
-            HStack(spacing: Space.sm) {
-                QuickTile(title: "Post a job", detail: "\(MockData.activeJobs) active", systemImage: "plus", action: onPostJob)
-                QuickTile(title: "Applicants", detail: "\(MockData.applicationCount) to review", systemImage: "tray.full") {}
+        return VStack(alignment: .leading, spacing: Space.xl) {
+            if let job = myJobs.first(where: { $0.status == .open }) {
+                // TODO: applicant names come from the job's applications in the API.
+                OpenJobPanel(job: job, applicantNames: SampleData.applications(for: job.id).map(\.freelancerName))
+            } else {
+                NoJobsPanel(onPostJob: onPostJob)
             }
 
-            VStack(alignment: .leading, spacing: Space.sm) {
-                HStack(alignment: .firstTextBaseline) {
-                    SectionHeader(title: "Top matches")
-                    NavigationLink(value: HomeRoute.recommendations) {
-                        Text("See all")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(UniColor.ember)
-                            .frame(minHeight: 44)
-                    }
+            HStack(spacing: Space.sm) {
+                QuickTile(title: "Post a job", detail: "\(openCount) open", systemImage: "plus", action: onPostJob)
+                QuickTile(title: "My jobs", detail: "\(myJobs.count) in total", systemImage: "briefcase") {
+                    onSelectTab(.myJobs)
                 }
+            }
 
-                VStack(spacing: 0) {
-                    ForEach(Array(MockData.topMatches.prefix(3).enumerated()), id: \.element.id) { index, match in
-                        if index > 0 { Divider().overlay(UniColor.hairline).padding(.leading, 72) }
-                        NavigationLink(value: match) {
-                            MatchRow(match: match)
-                        }
-                        .buttonStyle(.plain)
-                    }
+            if !myJobs.isEmpty {
+                VStack(alignment: .leading, spacing: Space.sm) {
+                    SectionHeader(title: "Recent jobs", actionTitle: "See all") { onSelectTab(.myJobs) }
+                    JobList(jobs: Array(myJobs.prefix(3)), showsClient: false)
                 }
-                .raisedSurface(padding: 0)
             }
         }
     }
@@ -124,26 +106,31 @@ struct HomeView: View {
     // MARK: Freelancer
 
     private var freelancerContent: some View {
-        VStack(alignment: .leading, spacing: Space.xl) {
-            if let best = MockData.jobsForYou.first {
-                BestJobPanel(job: best)
+        let pendingCount = myApplications.filter { $0.status == .pending }.count
+        // Newest first, so the panel shows the job posted most recently.
+        let newest = openJobs.sorted { $0.createdAt > $1.createdAt }
+
+        return VStack(alignment: .leading, spacing: Space.xl) {
+            if let job = newest.first {
+                NewestJobPanel(job: job)
+            } else {
+                InfoCard(systemImage: "briefcase", title: "No open jobs right now", message: "Pull down to refresh, or check Browse later.")
             }
 
             HStack(spacing: Space.sm) {
-                QuickTile(title: "Jobs nearby", detail: "\(MockData.jobsForYou.count) new today", systemImage: "briefcase") {}
-                QuickTile(title: "Offers waiting", detail: "\(MockData.pendingOffers) pending", systemImage: "tray") {}
+                QuickTile(title: "Browse jobs", detail: "\(openJobs.count) open", systemImage: "magnifyingglass") {
+                    onSelectTab(.browse)
+                }
+                QuickTile(title: "My work", detail: "\(pendingCount) pending", systemImage: "tray") {
+                    onSelectTab(.myWork)
+                }
             }
 
-            VStack(alignment: .leading, spacing: Space.sm) {
-                SectionHeader(title: "More jobs for you", actionTitle: "See all") {}
-
-                VStack(spacing: 0) {
-                    ForEach(Array(MockData.jobsForYou.dropFirst().enumerated()), id: \.element.id) { index, job in
-                        if index > 0 { Divider().overlay(UniColor.hairline).padding(.leading, Space.md) }
-                        JobRow(job: job)
-                    }
+            if newest.count > 1 {
+                VStack(alignment: .leading, spacing: Space.sm) {
+                    SectionHeader(title: "More jobs", actionTitle: "See all") { onSelectTab(.browse) }
+                    JobList(jobs: Array(newest.dropFirst().prefix(3)))
                 }
-                .raisedSurface(padding: 0)
             }
         }
     }
@@ -151,74 +138,100 @@ struct HomeView: View {
 
 // MARK: - Pieces
 
-/// The one strong element on the client Home: who matches your current job.
-private struct MatchPanel: View {
-    let jobTitle: String
-    let when: String
-    let matches: [MatchPreview]
+/// Hero card behind both panels: raised surface with the apricot glow top right.
+private struct PanelBackground: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
+            .fill(UniColor.raised)
+            .overlay(alignment: .topTrailing) {
+                RadialGradient(colors: [UniColor.apricot.opacity(0.35), .clear], center: .center, startRadius: 0, endRadius: 140)
+                    .frame(width: 280, height: 280)
+                    .offset(x: 90, y: -110)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+    }
+}
+
+/// Client: their open job, how many applied, and a way to review them.
+private struct OpenJobPanel: View {
+    let job: Job
+    let applicantNames: [String]
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
             HStack(alignment: .top, spacing: Space.md) {
                 VStack(alignment: .leading, spacing: Space.xxs) {
-                    Text("Your job")
+                    Text("Your open job")
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(UniColor.ember)
-                    Text(jobTitle)
-                        .font(UniFont.title)
+                    Text(job.title)
+                        .font(UniFont.title2)
                         .foregroundStyle(UniColor.ink)
-                    Label(when, systemImage: "calendar")
+                    Label(job.whenText, systemImage: "calendar")
                         .font(.subheadline)
                         .foregroundStyle(UniColor.inkSecondary)
                 }
                 Spacer(minLength: 0)
-                if let best = matches.first {
-                    ScoreRing(score: best.score, size: 72, label: "best match")
+                StatCircle(
+                    value: "\(job.applicationCount)",
+                    label: job.applicationCount == 1 ? "applicant" : "applicants",
+                    size: 72
+                )
+            }
+
+            if !applicantNames.isEmpty {
+                HStack(spacing: Space.sm) {
+                    AvatarStack(names: applicantNames, size: 36)
+                    Text("Waiting for you to pick one")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(UniColor.ink)
                 }
             }
 
-            HStack(spacing: Space.sm) {
-                AvatarStack(names: matches.map(\.name), size: 36)
-                Text("\(matches.count) students match, best first")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(UniColor.ink)
-            }
-
-            Text("Match % is how well a student fits this job: skills, distance, free time and reviews.")
-                .font(.footnote)
-                .foregroundStyle(UniColor.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            NavigationLink(value: HomeRoute.recommendations) {
-                Label("See matches", systemImage: "point.3.connected.trianglepath.dotted")
+            NavigationLink {
+                ApplicantsView(job: job)
+            } label: {
+                Text("Review applicants")
             }
             .buttonStyle(PrimaryButtonStyle())
         }
         .padding(Space.lg)
-        .background {
-            // Apricot glow behind the score: the only gradient on Home.
-            RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
-                .fill(UniColor.raised)
-                .overlay(alignment: .topTrailing) {
-                    RadialGradient(colors: [UniColor.apricot.opacity(0.35), .clear], center: .center, startRadius: 0, endRadius: 140)
-                        .frame(width: 280, height: 280)
-                        .offset(x: 90, y: -110)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
-        }
+        .background { PanelBackground() }
         .lift()
         .accessibilityElement(children: .contain)
     }
 }
 
-private struct BestJobPanel: View {
-    let job: JobPreview
+/// Client with nothing open: invite them to post instead of an empty card.
+private struct NoJobsPanel: View {
+    let onPostJob: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.md) {
+            Text("No open jobs")
+                .font(UniFont.title2)
+                .foregroundStyle(UniColor.ink)
+            Text("Post a job and students can start applying.")
+                .font(.subheadline)
+                .foregroundStyle(UniColor.inkSecondary)
+            Button("Post a job", action: onPostJob)
+                .buttonStyle(PrimaryButtonStyle())
+        }
+        .padding(Space.lg)
+        .background { PanelBackground() }
+        .lift()
+    }
+}
+
+/// Freelancer: the newest open job, with its budget on the right.
+private struct NewestJobPanel: View {
+    let job: Job
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
             HStack(alignment: .top, spacing: Space.md) {
                 VStack(alignment: .leading, spacing: Space.xxs) {
-                    Text("Best fit for you")
+                    Text("Just posted")
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(UniColor.ember)
                     Text(job.title)
@@ -229,18 +242,21 @@ private struct BestJobPanel: View {
                         .foregroundStyle(UniColor.inkSecondary)
                 }
                 Spacer(minLength: 0)
-                ScoreRing(score: job.score, size: 64)
+                StatCircle(value: job.budgetText, label: "budget", size: 72)
             }
             FlowLayout(spacing: 6) {
-                ForEach(job.reasons, id: \.self) { MatchReasonChip(reason: $0) }
-                Chip(text: job.when, systemImage: "calendar")
-                Chip(text: "$\(job.hourlyRate)/hr")
+                Chip(text: job.categoryName)
+                Chip(text: job.whenText, systemImage: "calendar")
             }
+            NavigationLink(value: job) {
+                Text("View job")
+            }
+            .buttonStyle(PrimaryButtonStyle())
         }
         .padding(Space.lg)
-        .background(UniColor.raised, in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+        .background { PanelBackground() }
         .lift()
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -278,64 +294,12 @@ private struct QuickTile: View {
     }
 }
 
-struct MatchRow: View {
-    let match: MatchPreview
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Space.sm) {
-            AvatarView(name: match.name, size: 48)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(match.name)
-                    .font(.headline)
-                    .foregroundStyle(UniColor.ink)
-                HStack(spacing: Space.xs) {
-                    RatingBadge(rating: match.rating, reviewCount: match.completedJobs)
-                    Text(match.university)
-                        .font(.subheadline)
-                        .foregroundStyle(UniColor.inkSecondary)
-                        .lineLimit(1)
-                }
-                FlowLayout(spacing: 6) {
-                    ForEach(match.reasons.prefix(2), id: \.self) { MatchReasonChip(reason: $0) }
-                }
-            }
-            Spacer(minLength: Space.xs)
-            ScoreRing(score: match.score, size: 48)
-        }
-        .padding(Space.md)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(Text("Opens profile"))
-    }
-}
-
-private struct JobRow: View {
-    let job: JobPreview
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Space.sm) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(job.title)
-                    .font(.headline)
-                    .foregroundStyle(UniColor.ink)
-                Text("From \(job.clientName), \(job.suburb)")
-                    .font(.subheadline)
-                    .foregroundStyle(UniColor.inkSecondary)
-                FlowLayout(spacing: 6) {
-                    ForEach(job.reasons, id: \.self) { MatchReasonChip(reason: $0) }
-                    Chip(text: job.when, systemImage: "calendar")
-                    Chip(text: "$\(job.hourlyRate)/hr")
-                }
-            }
-            Spacer(minLength: Space.xs)
-            ScoreRing(score: job.score, size: 48)
-        }
-        .padding(Space.md)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 #Preview("Client") {
-    NavigationStack { HomeView(onPostJob: {}) }
+    NavigationStack { HomeView(onPostJob: {}, onSelectTab: { _ in }) }
         .environment(AppSession.preview)
+}
+
+#Preview("Freelancer") {
+    NavigationStack { HomeView(onPostJob: {}, onSelectTab: { _ in }) }
+        .environment(AppSession.preview(as: .freelancer))
 }

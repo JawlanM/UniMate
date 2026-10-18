@@ -17,13 +17,9 @@ struct ProfileView: View {
                 identityCard
 
                 VStack(spacing: 0) {
-                    MenuRow(title: "Edit profile", systemImage: "person")
-                    Divider().overlay(UniColor.hairline)
-                    MenuRow(title: "Skills and categories", systemImage: "bolt")
-                    Divider().overlay(UniColor.hairline)
-                    MenuRow(title: "Availability", systemImage: "calendar")
-                    Divider().overlay(UniColor.hairline)
-                    MenuRow(title: "Notifications", systemImage: "bell")
+                    MenuRow(title: "About UniMate", systemImage: "info.circle") {
+                        AboutView()
+                    }
                     Divider().overlay(UniColor.hairline)
 
                     Button(role: .destructive) {
@@ -51,38 +47,49 @@ struct ProfileView: View {
         }
     }
 
+    private var roleText: String {
+        switch user?.role {
+        case .freelancer: "Finding work"
+        case .admin: "Administrator"
+        default: "Finding help"
+        }
+    }
+
+    private var roleIcon: String {
+        switch user?.role {
+        case .freelancer: "briefcase"
+        case .admin: "checkmark.shield"
+        default: "person.2"
+        }
+    }
+
     private var identityCard: some View {
         VStack(spacing: Space.sm) {
             AvatarView(name: user?.fullName ?? "UniMate", size: 88)
 
-            HStack(spacing: 6) {
-                Text(user?.fullName ?? "")
-                    .font(UniFont.title)
-                    .foregroundStyle(UniColor.ink)
-            }
+            Text(user?.fullName ?? "")
+                .font(UniFont.title)
+                .foregroundStyle(UniColor.ink)
 
             Text(user?.email ?? "")
                 .font(.subheadline)
                 .foregroundStyle(UniColor.inkSecondary)
 
-            Chip(
-                text: user?.role == .freelancer ? "Finding work" : "Finding help",
-                systemImage: user?.role == .freelancer ? "briefcase" : "person.2",
-                style: .brand
-            )
+            Chip(text: roleText, systemImage: roleIcon, style: .brand)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Space.md)
     }
 }
 
-private struct MenuRow: View {
+private struct MenuRow<Destination: View>: View {
     let title: String
     let systemImage: String
+    @ViewBuilder let destination: () -> Destination
 
     var body: some View {
         NavigationLink {
-            PlaceholderScreen(title: title, systemImage: systemImage, message: "Coming soon.")
+            destination()
         } label: {
             HStack(spacing: 16) {
                 Image(systemName: systemImage)

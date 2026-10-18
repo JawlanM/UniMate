@@ -31,7 +31,7 @@ struct AvatarView: View {
     }
 }
 
-/// Overlapping avatars: "these students match". Used on Home and job rows.
+/// Overlapping avatars, e.g. the students who applied for a job.
 struct AvatarStack: View {
     let names: [String]
     var size: CGFloat = 36
@@ -62,7 +62,7 @@ struct AvatarStack: View {
 enum ChipStyle {
     /// Default: quiet facts (time, price, university).
     case neutral
-    /// Match reasons and the brand moment. Wash background, ember text.
+    /// The brand moment (open jobs, the role chip). Wash background, ember text.
     case brand
     case success
     case danger
@@ -112,150 +112,46 @@ struct Chip: View {
     }
 }
 
-/// One reason a person matches, e.g. "1.4 km away". Strong reasons use the
-/// brand tint; the rest stay neutral so the strong ones stand out.
-struct MatchReasonChip: View {
-    let reason: MatchReason
+// MARK: - Stat circle
 
-    var body: some View {
-        Chip(text: reason.text, systemImage: reason.systemImage, style: reason.isStrong ? .brand : .neutral)
-    }
-}
-
-// MARK: - Match score
-
-/// Ring that fills to the score, always labelled "97% match" so it reads
-/// without explanation. Large rings put the label inside, small ones below.
-struct ScoreRing: View {
-    let score: Int
+/// A number in a soft apricot circle with a label under it ("$60 budget",
+/// "3 applicants"). Fills the right side of job cards and rows.
+struct StatCircle: View {
+    let value: String
+    let label: String
     var size: CGFloat = 52
-    var onDark = false
-    /// "match" by default; "best match" where the ring summarises a group.
-    var label = "match"
-
-    private var lineWidth: CGFloat { max(4, size * 0.09) }
-    private var fraction: CGFloat { CGFloat(min(max(score, 0), 100)) / 100 }
-    private var labelInside: Bool { size >= 64 }
-    private var textColor: Color { onDark ? UniColor.onInk : UniColor.ink }
 
     var body: some View {
         VStack(spacing: 3) {
-            ZStack {
-                Circle().stroke(onDark ? UniColor.onInk.opacity(0.18) : UniColor.apricotTrack, lineWidth: lineWidth)
-                Circle()
-                    .trim(from: 0, to: fraction)
-                    .stroke(UniColor.apricot, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: -2) {
-                    Text("\(score)%")
-                        .font(UniFont.score(size * (labelInside ? 0.27 : 0.29)))
-                        .foregroundStyle(textColor)
-                    if labelInside {
-                        Text(label)
-                            .font(.system(size: size * 0.14, weight: .semibold))
-                            .foregroundStyle(onDark ? UniColor.onInk.opacity(0.75) : UniColor.inkSecondary)
-                    }
-                }
+            Text(value)
+                .font(UniFont.numeral(size * 0.3))
+                .foregroundStyle(UniColor.ink)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-                .padding(lineWidth + 2)
-            }
-            .frame(width: size, height: size)
-
-            if !labelInside {
-                Text(label)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(onDark ? UniColor.onInk.opacity(0.75) : UniColor.inkSecondary)
-            }
+                .padding(6)
+                .frame(width: size, height: size)
+                .background(UniColor.apricotWash, in: Circle())
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(UniColor.inkSecondary)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(score)% \(label) for this job"))
-    }
-}
-
-/// Avatar wrapped by its score ring. The profile header uses this.
-struct ScoredAvatar: View {
-    let name: String
-    let score: Int
-    var size: CGFloat = 112
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            ZStack {
-                Circle().stroke(UniColor.apricotTrack, lineWidth: 6)
-                Circle()
-                    .trim(from: 0, to: CGFloat(score) / 100)
-                    .stroke(UniColor.apricot, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                AvatarView(name: name, size: size - 22)
-            }
-            .frame(width: size, height: size)
-
-            Text("\(score)% match")
-                .font(UniFont.score(15))
-                .foregroundStyle(UniColor.ink)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(UniColor.apricot, in: Capsule())
-                .overlay(Capsule().stroke(UniColor.canvas, lineWidth: 3))
-                .offset(y: 12)
-        }
-        .padding(.bottom, 12)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(name), \(score)% match for this job"))
-    }
-}
-
-/// One factor of the score breakdown ("Distance, 1.4 km", 86 of 100).
-struct ScoreFactorRow: View {
-    let factor: MatchFactor
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Image(systemName: factor.systemImage)
-                    .foregroundStyle(UniColor.ember)
-                    .frame(width: 22)
-                    .accessibilityHidden(true)
-                Text(factor.name)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(UniColor.ink)
-                Text(factor.detail)
-                    .font(.subheadline)
-                    .foregroundStyle(UniColor.inkSecondary)
-                Spacer(minLength: 8)
-                Text("\(factor.points)/\(factor.maxPoints)")
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(UniColor.ink)
-            }
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(UniColor.apricotTrack)
-                    Capsule()
-                        .fill(UniColor.apricot)
-                        .frame(width: proxy.size.width * CGFloat(factor.points) / CGFloat(max(factor.maxPoints, 1)))
-                }
-            }
-            .frame(height: 6)
-            .accessibilityHidden(true)
-        }
-        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("\(value) \(label)"))
     }
 }
 
 // MARK: - Match orbit
 
 /// Radar rings with students connected to a centre point. This is UniMate's
-/// signature graphic: it appears on Welcome and Recommendations only.
+/// signature graphic: it appears on Welcome only.
 struct OrbitNode: Identifiable {
     let id = UUID()
     let name: String
     /// Degrees, 0 = right, clockwise.
     let angle: Double
-    /// 0 = centre, 1 = outer ring. Closer means a better match.
+    /// 0 = centre, 1 = outer ring.
     let distance: CGFloat
     var size: CGFloat = 48
-    var score: Int? = nil
 }
 
 struct MatchOrbit<Center: View>: View {
@@ -273,7 +169,7 @@ struct MatchOrbit<Center: View>: View {
             let maxR = side / 2 - 30
 
             ZStack {
-                // Soft apricot glow: the closer to the centre, the stronger the match.
+                // Soft apricot glow around the centre.
                 RadialGradient(
                     colors: [UniColor.apricot.opacity(onDark ? 0.35 : 0.45), UniColor.apricot.opacity(0)],
                     center: .center, startRadius: 0, endRadius: maxR
@@ -303,24 +199,14 @@ struct MatchOrbit<Center: View>: View {
                 center().position(mid)
 
                 ForEach(Array(nodes.enumerated()), id: \.element.id) { index, node in
-                    VStack(spacing: -8) {
-                        AvatarView(name: node.name, size: node.size, outlined: true)
-                        if let score = node.score {
-                            Text("\(score)%")
-                                .font(UniFont.score(13))
-                                .foregroundStyle(UniColor.ink)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(UniColor.apricot, in: Capsule())
-                        }
-                    }
-                    .position(point(for: node, mid: mid, maxR: maxR))
-                    .opacity(isShown ? 1 : 0)
-                    .scaleEffect(isShown ? 1 : 0.6)
-                    .animation(
-                        reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.25).delay(0.15 + Double(index) * 0.07),
-                        value: isShown
-                    )
+                    AvatarView(name: node.name, size: node.size, outlined: true)
+                        .position(point(for: node, mid: mid, maxR: maxR))
+                        .opacity(isShown ? 1 : 0)
+                        .scaleEffect(isShown ? 1 : 0.6)
+                        .animation(
+                            reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.25).delay(0.15 + Double(index) * 0.07),
+                            value: isShown
+                        )
                 }
             }
             .animation(reduceMotion ? nil : .easeOut(duration: 0.6), value: isShown)
@@ -335,133 +221,16 @@ struct MatchOrbit<Center: View>: View {
     }
 }
 
-// MARK: - Rating
-
-/// Five stars filled to the exact rating (4.8 fills 4.8 stars).
-struct StarRow: View {
-    let rating: Double
-    var size: CGFloat = 16
-
-    var body: some View {
-        let stars = HStack(spacing: size * 0.15) {
-            ForEach(0..<5, id: \.self) { _ in
-                Image(systemName: "star.fill").font(.system(size: size))
-            }
-        }
-        stars
-            .foregroundStyle(UniColor.apricotTrack)
-            .overlay(alignment: .leading) {
-                GeometryReader { proxy in
-                    stars
-                        .foregroundStyle(UniColor.apricot)
-                        .mask(alignment: .leading) {
-                            Rectangle().frame(width: proxy.size.width * CGFloat(min(max(rating, 0), 5) / 5))
-                        }
-                }
-            }
-            .fixedSize()
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("Rated \(rating, specifier: "%.1f") out of 5"))
-    }
-}
-
-/// Compact rating for rows: star, number, review count. No reviews shows "New".
-struct RatingBadge: View {
-    let rating: Double?
-    let reviewCount: Int
-
-    var body: some View {
-        if let rating, reviewCount > 0 {
-            HStack(spacing: 3) {
-                Image(systemName: "star.fill")
-                    .imageScale(.small)
-                    .foregroundStyle(UniColor.ember)
-                Text("\(rating, specifier: "%.1f")")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(UniColor.ink)
-                    .monospacedDigit()
-                Text("(\(reviewCount))")
-                    .foregroundStyle(UniColor.inkSecondary)
-            }
-            .font(.subheadline)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("Rated \(rating, specifier: "%.1f") from \(reviewCount) reviews"))
-        } else {
-            Chip(text: "New", systemImage: "sparkle", style: .brand)
-                .accessibilityLabel(Text("New, no reviews yet"))
-        }
-    }
-}
-
-/// Profile rating block: big number, exact stars, count, and what people praise.
-struct RatingSummary: View {
-    let rating: Double?
-    let reviewCount: Int
-    let praise: [Praise]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Space.md) {
-            if let rating, reviewCount > 0 {
-                HStack(alignment: .center, spacing: Space.md) {
-                    Text("\(rating, specifier: "%.1f")")
-                        .font(UniFont.score(44))
-                        .foregroundStyle(UniColor.ink)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: Space.xxs) {
-                        StarRow(rating: rating, size: 18)
-                        Text("From \(reviewCount) reviews")
-                            .font(.subheadline)
-                            .foregroundStyle(UniColor.inkSecondary)
-                    }
-                }
-                if !praise.isEmpty {
-                    VStack(alignment: .leading, spacing: Space.xs) {
-                        Text("Clients mention")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(UniColor.inkSecondary)
-                        FlowLayout(spacing: 6) {
-                            ForEach(praise) { item in
-                                HStack(spacing: 5) {
-                                    Text(item.label)
-                                    Text("\(item.count)")
-                                        .monospacedDigit()
-                                        .padding(.horizontal, 6)
-                                        .background(UniColor.raised, in: Capsule())
-                                }
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(UniColor.ink)
-                                .padding(.leading, 10)
-                                .padding(.trailing, 6)
-                                .padding(.vertical, 6)
-                                .background(UniColor.sunken, in: Capsule())
-                                .accessibilityElement(children: .ignore)
-                                .accessibilityLabel(Text("\(item.label), mentioned \(item.count) times"))
-                            }
-                        }
-                    }
-                }
-            } else {
-                HStack(spacing: Space.sm) {
-                    StarRow(rating: 0, size: 18)
-                    Text("No reviews yet. Ratings appear after the first completed job.")
-                        .font(.subheadline)
-                        .foregroundStyle(UniColor.inkSecondary)
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Buttons
 
-/// Near-black: the button that confirms (Sign in, Continue, Send offer).
+/// Near-black: the button that confirms (Sign in, Post job, Apply).
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         StyledButton(configuration: configuration, fill: UniColor.ink, text: UniColor.onInk, outline: nil)
     }
 }
 
-/// Apricot: reserved for the matching action ("Find my matches").
+/// Apricot: the brand action. Not used by a screen yet.
 struct BrandButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         StyledButton(configuration: configuration, fill: UniColor.apricot, text: UniColor.onApricot, outline: nil)
@@ -554,7 +323,7 @@ struct SectionHeader: View {
 // MARK: - Text input with a label above the value
 
 struct LabeledInput: View {
-    enum Kind { case text, name, email, password, code }
+    enum Kind { case text, name, email, password, code, decimal }
 
     let label: String
     @Binding var text: String
@@ -618,6 +387,10 @@ struct LabeledInput: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .accessibilityLabel(Text(label))
+        case .decimal:
+            TextField("", text: $text)
+                .keyboardType(.decimalPad)
+                .accessibilityLabel(Text(label))
         case .code:
             TextField("", text: $text)
                 .keyboardType(.numberPad)
@@ -636,6 +409,60 @@ struct LabeledInput: View {
             .autocorrectionDisabled()
             .accessibilityLabel(Text(label))
         }
+    }
+}
+
+// MARK: - Multi-line text input, same look as LabeledInput
+
+struct LabeledTextEditor: View {
+    let label: String
+    @Binding var text: String
+    var limit: Int? = nil
+
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(label)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(isFocused ? UniColor.ember : UniColor.inkSecondary)
+                Spacer()
+                if let limit {
+                    Text("\(text.count)/\(limit)")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(text.count > limit ? UniColor.danger : UniColor.inkSecondary)
+                        .accessibilityLabel(Text("\(text.count) of \(limit) characters"))
+                }
+            }
+            TextEditor(text: $text)
+                .font(.body)
+                .foregroundStyle(UniColor.ink)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 120)
+                .focused($isFocused)
+                .accessibilityLabel(Text(label))
+        }
+        .padding(.horizontal, Space.md)
+        .padding(.vertical, 10)
+        .background(UniColor.raised, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+                .stroke(isFocused ? UniColor.ember : UniColor.hairline, lineWidth: isFocused ? 2 : 1)
+        )
+        .animation(.easeOut(duration: 0.15), value: isFocused)
+    }
+}
+
+/// Inline validation message under a field.
+struct FieldError: View {
+    let message: String
+
+    var body: some View {
+        Text(message)
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(UniColor.danger)
+            .padding(.leading, Space.xxs)
     }
 }
 

@@ -86,7 +86,7 @@ enum AvatarPalette {
 
 // MARK: - Typography
 
-/// Bricolage Grotesque for display text and score numbers; SF Pro for everything
+/// Bricolage Grotesque for display text and big numbers; SF Pro for everything
 /// else. Custom sizes are tied to a text style so they follow Dynamic Type.
 /// If the font files are missing, Font.custom falls back to SF Pro.
 enum UniFont {
@@ -106,8 +106,8 @@ enum UniFont {
     static let footnote = Font.footnote
     static let caption = Font.caption.weight(.medium)
 
-    /// Score numerals, scaled from the ring size.
-    static func score(_ size: CGFloat) -> Font {
+    /// Big numerals (budgets, counts), scaled from the circle size.
+    static func numeral(_ size: CGFloat) -> Font {
         Font.custom(extraBold, size: size, relativeTo: .headline).monospacedDigit()
     }
 }
@@ -135,7 +135,7 @@ enum Radius {
 
 // MARK: - Elevation
 
-/// Only things that float above the page get a shadow (tab bar, top match,
+/// Only things that float above the page get a shadow (tab bar, home panel,
 /// sheets). Everything else is separated by colour or a hairline.
 struct LiftShadow: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
